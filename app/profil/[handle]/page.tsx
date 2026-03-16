@@ -430,13 +430,13 @@ export default function ProfilPage() {
         {tab === 'collection' && (
           <div>
             {collectionLoading ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 200px)', gap: '1rem', alignItems: 'start' }}>
+              <div className="collection-grid">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} style={{ aspectRatio: '4/5', background: '#0f1318', opacity: 0.5 }} />
                 ))}
               </div>
             ) : ownedCards.length > 0 ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 200px)', gap: '1rem', alignItems: 'start' }}>
+              <div className="collection-grid">
                 {ownedCards.map(card => (
                   <Link key={card.handle} href={`/profil/${card.handle}`} style={{ textDecoration: 'none', display: 'block' }}>
                     <ProfileCard

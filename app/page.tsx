@@ -22,7 +22,7 @@ interface Card {
 function Carousel({ cards, loading }: { cards: Card[]; loading: boolean }) {
   const ref = useRef<HTMLDivElement>(null)
   return (
-    <div ref={ref} style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingLeft: 'calc((100vw - 1100px) / 2 + 2.5rem)', paddingRight: '2.5rem', paddingBottom: '1rem', scrollbarWidth: 'none' }}>
+    <div ref={ref} className="carousel-scroll">
       {loading
         ? Array.from({ length: 5 }).map((_, i) => (
             <div key={i} style={{ flexShrink: 0, width: 200, aspectRatio: '4/5', background: '#0f1318', opacity: 0.5 }} />

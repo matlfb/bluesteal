@@ -91,3 +91,29 @@ body::before {
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+.collection-grid {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (min-width: 640px) {
+  .collection-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 768px) {
+  .collection-grid { grid-template-columns: repeat(5, 1fr); }
+}
+
+.carousel-scroll {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  padding-left: calc((100vw - 1100px) / 2 + 2.5rem);
+  padding-right: 2.5rem;
+  padding-bottom: 1rem;
+  scrollbar-width: none;
+}
+@media (max-width: 639px) {
+  .carousel-scroll { padding-left: 2.5rem; }
+}
