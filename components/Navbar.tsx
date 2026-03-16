@@ -20,6 +20,38 @@ interface SearchResult {
   did: string; handle: string; displayName: string; avatar: string | null; followersCount: number
 }
 
+function IconHome({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill={active ? '#00e5ff' : 'none'} stroke={active ? '#00e5ff' : '#5a6270'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/>
+      <polyline points="9 21 9 12 15 12 15 21"/>
+    </svg>
+  )
+}
+function IconSearch({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#00e5ff' : '#5a6270'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+  )
+}
+function IconActivity({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#00e5ff' : '#5a6270'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </svg>
+  )
+}
+function IconLeaderboard({ active }: { active: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#00e5ff' : '#5a6270'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="14" width="5" height="7" rx="1"/>
+      <rect x="9.5" y="9" width="5" height="12" rx="1"/>
+      <rect x="17" y="4" width="5" height="17" rx="1"/>
+    </svg>
+  )
+}
+
 export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
@@ -111,20 +143,23 @@ export default function Navbar() {
       {searchOpen && (
         <div onClick={closeSearch} style={{ position: 'fixed', inset: 0, zIndex: 190, background: 'rgba(14,14,12,0.6)', backdropFilter: 'blur(2px)' }} />
       )}
+
+      {/* Top bar */}
       <nav style={{
         position: 'fixed', top: 0, width: '100%', zIndex: 200, height: '60px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 2.5rem',
+        padding: '0 1.25rem',
         background: scrolled || searchOpen ? 'rgba(14,14,12,0.96)' : '#0a0d11',
         backdropFilter: scrolled || searchOpen ? 'blur(12px)' : 'none',
         borderBottom: `1px solid ${scrolled || searchOpen ? 'rgba(0,229,255,0.1)' : 'transparent'}`,
-        transition: 'background 0.25s, border-color 0.25s', gap: '1.5rem',
+        transition: 'background 0.25s, border-color 0.25s',
       }}>
-        <Link href="/" onClick={closeSearch} style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#00e5ff', letterSpacing: '0.08em', textDecoration: 'none', flexShrink: 0, ...faded }}>
+        <Link href="/" onClick={closeSearch} style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#00e5ff', letterSpacing: '0.08em', textDecoration: 'none', flexShrink: 0 }}>
           BLUESTEAL
         </Link>
 
-        <div ref={searchWrapRef} style={{ flex: searchOpen ? 1 : 0, maxWidth: searchOpen ? 520 : 0, transition: 'flex 0.3s ease, max-width 0.3s ease', position: 'relative' }}>
+        {/* Desktop search bar */}
+        <div ref={searchWrapRef} className="nav-search-wrap">
           {searchOpen && (
             <>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
@@ -138,7 +173,7 @@ export default function Navbar() {
                   style={{ width: '100%', padding: '0.5rem 2.5rem 0.5rem 2.2rem', background: '#0f1318', border: '1px solid rgba(0,229,255,0.25)', color: '#e8e6dc', fontFamily: 'var(--font-mono)', fontSize: '13px', outline: 'none', letterSpacing: '0.02em' }}
                 />
                 {query && (
-                  <button onClick={() => setQuery('')} style={{ position: 'absolute', right: 10, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t3)', fontSize: '16px', lineHeight: 1, padding: '2px 4px' }}>×</button>
+                  <button onClick={() => setQuery('')} style={{ position: 'absolute', right: 10, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t3)', fontSize: '16px', lineHeight: 1, padding: '2px 4px' }}>x</button>
                 )}
               </div>
               {showDropdown && (
@@ -152,7 +187,8 @@ export default function Navbar() {
                     </div>
                   )}
                   {results.map((r, i) => (
-                    <Link key={r.did} href={`/profil/${r.handle}`} onClick={closeSearch} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1.25rem', textDecoration: 'none', color: 'inherit', background: i === focusedIdx ? 'rgba(0,229,255,0.06)' : 'transparent', borderBottom: i < results.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none', borderLeft: `3px solid ${i === focusedIdx ? '#00e5ff' : 'transparent'}`, transition: 'background 0.1s, border-left-color 0.1s', cursor: 'pointer' }}
+                    <Link key={r.did} href={`/profil/${r.handle}`} onClick={closeSearch}
+                      style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1.25rem', textDecoration: 'none', color: 'inherit', background: i === focusedIdx ? 'rgba(0,229,255,0.06)' : 'transparent', borderBottom: i < results.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none', borderLeft: `3px solid ${i === focusedIdx ? '#00e5ff' : 'transparent'}`, transition: 'background 0.1s, border-left-color 0.1s', cursor: 'pointer' }}
                       onMouseEnter={e => { setFocusedIdx(i); (e.currentTarget as HTMLElement).style.background = 'rgba(0,229,255,0.06)'; (e.currentTarget as HTMLElement).style.borderLeftColor = '#00e5ff' }}
                       onMouseLeave={e => { if (focusedIdx !== i) { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.borderLeftColor = 'transparent' } }}
                     >
@@ -178,8 +214,9 @@ export default function Navbar() {
           )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.75rem', ...faded }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
+          {/* Desktop nav links */}
+          <div className="nav-desktop-links" style={{ alignItems: 'center', gap: '1.75rem', ...faded }}>
             {navLinks.map(({ href, label }) => {
               const active = pathname === href
               return (
@@ -191,8 +228,9 @@ export default function Navbar() {
             })}
           </div>
 
+          {/* Desktop search button */}
           {!searchOpen && (
-            <button onClick={openSearch} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#8a8878', letterSpacing: '0.1em', padding: 0, transition: 'color 0.2s' }}
+            <button className="nav-desktop-search" onClick={openSearch}
               onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#00e5ff' }}
               onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#8a8878' }}
             >
@@ -201,15 +239,19 @@ export default function Navbar() {
             </button>
           )}
 
-          {user && <Link href="/jetons" onClick={closeSearch} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontFamily: 'var(--font-mono)', fontSize: '12px', border: `1px solid ${pathname === '/jetons' ? 'rgba(0,229,255,0.35)' : 'rgba(0,229,255,0.15)'}`, padding: '0 0.9rem', height: '35px', textDecoration: 'none', background: pathname === '/jetons' ? 'rgba(0,229,255,0.04)' : 'none', ...faded, transition: searchOpen ? 'opacity 0.2s' : 'border-color 0.2s, background 0.2s, opacity 0.2s' }}
-            onMouseEnter={e => { if (pathname !== '/jetons') { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.3)'; (e.currentTarget as HTMLElement).style.background = 'rgba(0,229,255,0.03)' } }}
-            onMouseLeave={e => { if (pathname !== '/jetons') { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.15)'; (e.currentTarget as HTMLElement).style.background = 'none' } }}
-          >
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#38bdf8', display: 'inline-block', animation: 'pulse 2s infinite', flexShrink: 0 }} />
-            <span style={{ color: '#e8e6dc', letterSpacing: '0.05em' }}>{fmtNum(jetons)} <span style={{ color: 'var(--t3)' }}>J</span></span>
-          </Link>}
+          {/* Jetons */}
+          {user && (
+            <Link href="/jetons" onClick={closeSearch} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontFamily: 'var(--font-mono)', fontSize: '12px', border: `1px solid ${pathname === '/jetons' ? 'rgba(0,229,255,0.35)' : 'rgba(0,229,255,0.15)'}`, padding: '0 0.9rem', height: '35px', textDecoration: 'none', background: pathname === '/jetons' ? 'rgba(0,229,255,0.04)' : 'none', flexShrink: 0, ...faded }}
+              onMouseEnter={e => { if (pathname !== '/jetons') { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.3)'; (e.currentTarget as HTMLElement).style.background = 'rgba(0,229,255,0.03)' } }}
+              onMouseLeave={e => { if (pathname !== '/jetons') { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.15)'; (e.currentTarget as HTMLElement).style.background = 'none' } }}
+            >
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#38bdf8', display: 'inline-block', animation: 'pulse 2s infinite', flexShrink: 0 }} />
+              <span style={{ color: '#e8e6dc', letterSpacing: '0.05em' }}>{fmtNum(jetons)} <span style={{ color: 'var(--t3)' }}>J</span></span>
+            </Link>
+          )}
 
-          <div style={{ ...faded }}>
+          {/* Desktop user dropdown */}
+          <div className="nav-desktop-user" style={{ ...faded }}>
             {authLoading ? (
               <div style={{ width: 34, height: 34, background: '#14191f', border: '1px solid rgba(0,229,255,0.1)', animation: 'pulse 1.5s infinite' }} />
             ) : user ? (
@@ -220,7 +262,7 @@ export default function Navbar() {
                 >
                   {user.avatar ? <img src={user.avatar} alt="" style={{ width: 26, height: 26, objectFit: 'cover', display: 'block' }} /> : <div style={{ width: 26, height: 26, background: '#14191f', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-serif)', fontSize: '14px', color: '#00e5ff', fontStyle: 'italic' }}>{(user.displayName || user.handle).charAt(0)}</div>}
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.05em' }}>@{user.handle}</span>
-                  <span style={{ color: 'var(--t3)', fontSize: '10px' }}>▾</span>
+                  <span style={{ color: 'var(--t3)', fontSize: '10px' }}>v</span>
                 </button>
                 {dropdownOpen && (
                   <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: '#0f1318', border: '1px solid rgba(0,229,255,0.15)', minWidth: 200, zIndex: 300 }}>
@@ -251,6 +293,74 @@ export default function Navbar() {
           </div>
         </div>
       </nav>
+
+      {/* Bottom nav — mobile only */}
+      <nav className="nav-bottom">
+        <Link href="/" className="nav-bottom-item">
+          <IconHome active={pathname === '/'} />
+        </Link>
+        <button className="nav-bottom-item" onClick={openSearch}>
+          <IconSearch active={searchOpen} />
+        </button>
+        <Link href="/activity" className="nav-bottom-item">
+          <IconActivity active={pathname === '/activity'} />
+        </Link>
+        <Link href="/leaderboard" className="nav-bottom-item">
+          <IconLeaderboard active={pathname === '/leaderboard'} />
+        </Link>
+        <Link href={user ? `/profil/${user.handle}` : '/login'} className="nav-bottom-item">
+          {user?.avatar
+            ? <img src={user.avatar} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', border: pathname.startsWith('/profil') ? '2px solid #00e5ff' : '2px solid transparent', display: 'block' }} />
+            : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={pathname.startsWith('/profil') ? '#00e5ff' : '#5a6270'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          }
+        </Link>
+      </nav>
+
+      {/* Mobile search overlay */}
+      {searchOpen && (
+        <div className="nav-mobile-search">
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: 12, pointerEvents: 'none' }}>
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              ref={searchInputRef} type="text" value={query}
+              onChange={e => setQuery(e.target.value)} onKeyDown={handleKeyDown}
+              placeholder={t('nav_search_placeholder')}
+              style={{ width: '100%', padding: '0.6rem 2.5rem 0.6rem 2.2rem', background: '#0f1318', border: '1px solid rgba(0,229,255,0.25)', color: '#e8e6dc', fontFamily: 'var(--font-mono)', fontSize: '13px', outline: 'none', letterSpacing: '0.02em' }}
+            />
+            {query && (
+              <button onClick={() => setQuery('')} style={{ position: 'absolute', right: 10, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t3)', fontSize: '16px', lineHeight: 1, padding: '2px 4px' }}>x</button>
+            )}
+          </div>
+          {showDropdown && (
+            <div style={{ marginTop: '0.5rem', background: '#0f1318', border: '1px solid rgba(0,229,255,0.15)', maxHeight: '60vh', overflowY: 'auto' }}>
+              {searching && !results.length && (
+                <div style={{ padding: '1rem 1.25rem', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t3)' }}>{t('nav_searching')}</div>
+              )}
+              {!searching && results.length === 0 && query.trim() && (
+                <div style={{ padding: '1rem 1.25rem', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t3)' }}>{t('nav_no_results', { query })}</div>
+              )}
+              {results.map((r, i) => (
+                <Link key={r.did} href={`/profil/${r.handle}`} onClick={closeSearch}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1.25rem', textDecoration: 'none', color: 'inherit', borderBottom: i < results.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}
+                >
+                  <div style={{ width: 36, height: 36, flexShrink: 0, background: '#14191f', overflow: 'hidden' }}>
+                    {r.avatar ? <img src={r.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontFamily: 'var(--font-serif)', fontSize: '1rem', color: '#00e5ff', fontStyle: 'italic', opacity: 0.4 }}>{r.displayName.charAt(0)}</span></div>}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 600, color: '#e8e6dc', marginBottom: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.displayName}</p>
+                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{r.handle}</p>
+                  </div>
+                  <div style={{ flexShrink: 0 }}>
+                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#00e5ff' }}>{fmtNum(calcPrice(r.followersCount))} J</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </>
   )
 }
