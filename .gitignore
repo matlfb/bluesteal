@@ -1,0 +1,25 @@
+# deps
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# env
+.env
+.env.*
+!.env.example
+
+# data (local database)
+data/
+
+# logs
+logs/
+*.log
+
+# misc
+.DS_Store
+tsconfig.tsbuildinfo
+
+# start script
+/PORT=3001

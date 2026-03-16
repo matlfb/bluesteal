@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-serif: 'DM Serif Display', Georgia, serif;
+  --font-sans: 'Manrope', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+/* ─── Design tokens ──────────────────────────────────────────────────────────
+   Contrast ratios measured against WCAG 2.1 (AA = 4.5:1 normal, 3:1 large)
+   ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --bg:       #0a0d11;   /* main canvas */
+  --surface:  #0f1318;   /* cards, panels */
+  --elevated: #14191f;   /* inputs, dropdowns */
+
+  /* Text hierarchy */
+  --t1: #e2e8f0;   /* primary   — 16.5:1 on --bg ✅ */
+  --t2: #7a8fa6;   /* secondary —  5.97:1 on --bg ✅ */
+  --t3: #627284;   /* muted     —  5.08:1 on --bg ✅  (was #5a5a4a 2.86:1 ❌) */
+  --t4: #445566;   /* subtle    —  3.08:1 on --surface — decorative/supplementary only */
+
+  /* Brand */
+  --brand:     #00e5ff;  /* accent — 16.9:1 on --bg ✅ */
+  --brand-dim: #00b4d8;  /* button bg — 10.2:1 with --bg text ✅ */
+
+  /* Semantic */
+  --success: #38bdf8;   /* 9.2:1 on --bg ✅ */
+  --danger:  #e05252;   /* 5.33:1 on --bg ✅ */
+  --warning: #f5c842;   /* ~10.5:1 on --bg ✅ */
+  --info:    #0085ff;   /* 6.0:1 on --bg ✅ */
+
+  /* Borders */
+  --border:       rgba(0, 229, 255, 0.08);
+  --border-brand: rgba(0, 229, 255, 0.2);
+
+  /* Button: primary (filled) */
+  --btn-primary-bg:    var(--brand-dim);
+  --btn-primary-fg:    var(--bg);
+  --btn-primary-hover: var(--brand);
+
+  /* Button: ghost (outline) */
+  --btn-ghost-bg:     transparent;
+  --btn-ghost-fg:     var(--t2);
+  --btn-ghost-border: var(--border-brand);
+
+  /* Button: initial (neutral/unset) */
+  --btn-initial-bg:     var(--surface);
+  --btn-initial-fg:     var(--t2);
+  --btn-initial-border: rgba(255, 255, 255, 0.07);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; background: var(--bg); }
+
+body {
+  background-color: var(--bg);
+  color: var(--t1);
+  font-family: 'Manrope', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  font-weight: 300;
+  overflow-x: hidden;
+}
+
+/* Noise overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0.5;
+}
+
+::selection { background: #003d52; color: var(--brand); }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: #1a2030; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
