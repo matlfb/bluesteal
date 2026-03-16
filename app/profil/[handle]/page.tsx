@@ -283,8 +283,8 @@ export default function ProfilPage() {
 
       {/* Profile header */}
       <div style={{ borderBottom: '1px solid rgba(0,229,255,0.08)', position: 'relative', zIndex: 1 }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 2.5rem 2.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2rem', marginTop: -56 }}>
+        <div className='profile-header-wrap'>
+          <div className='profile-header-row'>
 
             {/* Avatar */}
             <div style={{
@@ -304,8 +304,8 @@ export default function ProfilPage() {
             </div>
 
             {/* Name + actions */}
-            <div style={{ flex: 1, paddingBottom: '0.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+            <div className='profile-info'>
+              <div className='profile-meta'>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.2rem' }}>
                     <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '2.8rem', lineHeight: 1.05, color: '#e8e6dc' }}>
@@ -329,11 +329,12 @@ export default function ProfilPage() {
                 </div>
 
                 {/* Actions */}
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                <div className='profile-actions'>
                   {user ? (
                     <button
                       onClick={() => { if (!isOwned && !isOwnProfile && !stolen && !stealing) setModalOpen(true) }}
                       disabled={isOwned || isOwnProfile || stolen || stealing}
+                      className='profile-steal-btn'
                       style={{
                         padding: '0.5rem 1.5rem',
                         background: (isOwned || isOwnProfile || stolen) ? '#0f1318' : stealing ? '#003d52' : '#00b4d8',
@@ -377,7 +378,7 @@ export default function ProfilPage() {
           )}
 
           {/* Stats */}
-          <div style={{ display: 'flex', gap: '3rem', marginTop: '1.75rem', flexWrap: 'wrap' }}>
+          <div className='profile-stats'>
             {[
               { label: t('profil_stat_followers'), value: formatNum(profile.followersCount) },
               { label: t('profil_stat_following'), value: formatNum(profile.followsCount)   },
@@ -397,7 +398,7 @@ export default function ProfilPage() {
       </div>
 
       {/* Tabs + content */}
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '2.5rem 2.5rem' }}>
+      <div className='profile-tabs-section'>
 
         {/* Tab bar */}
         <div style={{
