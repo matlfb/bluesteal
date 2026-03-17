@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
 import { useLang } from '@/context/LangContext'
@@ -22,7 +22,7 @@ interface Profile {
   avatar: string | null
 }
 
-type Tab = 'global' | 'friends'
+type Tab = 'global' | 'friends' | 'mine'
 
 
 
@@ -44,11 +44,13 @@ function Avatar({ profile, handle, size = 36 }: { profile: Profile | null; handl
   )
 }
 
-function EventRow({ ev, profileCache, isFriendsTab, followingSet }: {
+function EventRow({ ev, profileCache, isFriendsTab, followingSet, isMineTab, myHandle }: {
   ev: ActivityEvent
   profileCache: Record<string, Profile>
   isFriendsTab: boolean
   followingSet: Set<string>
+  isMineTab?: boolean
+  myHandle?: string
 }) {
   const { t, fmtDate, fmtNum } = useLang()
   const buyer   = profileCache[ev.buyer_did]
@@ -56,6 +58,17 @@ function EventRow({ ev, profileCache, isFriendsTab, followingSet }: {
 
   // In friends tab: if subject is a friend (but buyer isn't), frame as "was bought by"
   const subjectIsFriend = isFriendsTab && followingSet.has(ev.subject_did) && !followingSet.has(ev.buyer_did)
+
+  // In mine tab: distinguish "you bought" vs "someone bought from you"
+  const youBought = isMineTab && ev.buyer_handle === myHandle
+  const soldFromYou = isMineTab && !youBought
+
+  let verb: string
+  if (isMineTab) {
+    verb = youBought ? t('activity_you_bought') : t('activity_you_sold', { buyer: ev.buyer_handle })
+  } else {
+    verb = subjectIsFriend ? t('activity_bought_by') : t('activity_bought')
+  }
 
   return (
     <div style={{
@@ -73,58 +86,131 @@ function EventRow({ ev, profileCache, isFriendsTab, followingSet }: {
 
       {/* Text */}
       <div style={{ minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', lineHeight: 1.5 }}>
-          <Link href={`/profil/${ev.buyer_handle}`} style={{
-            fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600,
-            color: 'var(--t1)', textDecoration: 'none', flexShrink: 0,
-          }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--brand)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t1)' }}
-          >
-            @{ev.buyer_handle}
-          </Link>
-
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t3)', flexShrink: 0 }}>
-            {subjectIsFriend ? t('activity_bought_by') : t('activity_bought')}
-          </span>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
-            <div style={{
-              width: 20, height: 20, background: '#14191f', overflow: 'hidden', flexShrink: 0,
-              border: '1px solid rgba(0,229,255,0.08)',
-            }}>
-              {subject?.avatar
-                ? <img src={subject.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontFamily: 'var(--font-serif)', fontSize: 9, color: '#00e5ff', fontStyle: 'italic', opacity: 0.5 }}>
-                      {ev.subject_handle.charAt(0)}
-                    </span>
+        {isMineTab ? (
+          /* Mine tab: show simplified sentence */
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', lineHeight: 1.5 }}>
+            {youBought ? (
+              <>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t3)', flexShrink: 0 }}>
+                  {t('activity_you_bought')}
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                  <div style={{ width: 20, height: 20, background: '#14191f', overflow: 'hidden', flexShrink: 0, border: '1px solid rgba(0,229,255,0.08)' }}>
+                    {subject?.avatar
+                      ? <img src={subject.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontFamily: 'var(--font-serif)', fontSize: 9, color: '#00e5ff', fontStyle: 'italic', opacity: 0.5 }}>{ev.subject_handle.charAt(0)}</span>
+                        </div>
+                    }
                   </div>
-              }
-            </div>
-            <Link href={`/profil/${ev.subject_handle}`} style={{
-              fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600,
-              color: 'var(--brand)', textDecoration: 'none',
-            }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t1)' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--brand)' }}
-            >
-              @{ev.subject_handle}
-            </Link>
+                  <Link href={`/profil/${ev.subject_handle}`} style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, color: 'var(--brand)', textDecoration: 'none' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t1)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--brand)' }}
+                  >
+                    @{ev.subject_handle}
+                  </Link>
+                </div>
+                {ev.prev_owner_handle && (
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t3)', flexShrink: 0 }}>
+                    {t('activity_from')}{' '}
+                    <Link href={`/profil/${ev.prev_owner_handle}`} style={{ color: 'var(--t2)', textDecoration: 'none' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t1)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t2)' }}
+                    >
+                      @{ev.prev_owner_handle}
+                    </Link>
+                  </span>
+                )}
+              </>
+            ) : (
+              /* Sold from you */
+              <>
+                <Link href={`/profil/${ev.buyer_handle}`} style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, color: 'var(--t1)', textDecoration: 'none', flexShrink: 0 }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--brand)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t1)' }}
+                >
+                  @{ev.buyer_handle}
+                </Link>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#e05252', flexShrink: 0 }}>
+                  bought
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                  <div style={{ width: 20, height: 20, background: '#14191f', overflow: 'hidden', flexShrink: 0, border: '1px solid rgba(0,229,255,0.08)' }}>
+                    {subject?.avatar
+                      ? <img src={subject.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontFamily: 'var(--font-serif)', fontSize: 9, color: '#00e5ff', fontStyle: 'italic', opacity: 0.5 }}>{ev.subject_handle.charAt(0)}</span>
+                        </div>
+                    }
+                  </div>
+                  <Link href={`/profil/${ev.subject_handle}`} style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, color: 'var(--brand)', textDecoration: 'none' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t1)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--brand)' }}
+                  >
+                    @{ev.subject_handle}
+                  </Link>
+                </div>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#e05252', flexShrink: 0 }}>
+                  from your collection
+                </span>
+              </>
+            )}
           </div>
+        ) : (
+          /* Global / Friends tab: original layout */
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', lineHeight: 1.5 }}>
+            <Link href={`/profil/${ev.buyer_handle}`} style={{
+              fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600,
+              color: 'var(--t1)', textDecoration: 'none', flexShrink: 0,
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--brand)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t1)' }}
+            >
+              @{ev.buyer_handle}
+            </Link>
 
-          {ev.prev_owner_handle && (
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t3)', flexShrink: 0 }}>
-              {t('activity_from')}{' '}
-              <Link href={`/profil/${ev.prev_owner_handle}`} style={{ color: 'var(--t2)', textDecoration: 'none' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t1)' }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t2)' }}
-              >
-                @{ev.prev_owner_handle}
-              </Link>
+              {subjectIsFriend ? t('activity_bought_by') : t('activity_bought')}
             </span>
-          )}
-        </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+              <div style={{
+                width: 20, height: 20, background: '#14191f', overflow: 'hidden', flexShrink: 0,
+                border: '1px solid rgba(0,229,255,0.08)',
+              }}>
+                {subject?.avatar
+                  ? <img src={subject.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontFamily: 'var(--font-serif)', fontSize: 9, color: '#00e5ff', fontStyle: 'italic', opacity: 0.5 }}>
+                        {ev.subject_handle.charAt(0)}
+                      </span>
+                    </div>
+                }
+              </div>
+              <Link href={`/profil/${ev.subject_handle}`} style={{
+                fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600,
+                color: 'var(--brand)', textDecoration: 'none',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t1)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--brand)' }}
+              >
+                @{ev.subject_handle}
+              </Link>
+            </div>
+
+            {ev.prev_owner_handle && (
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t3)', flexShrink: 0 }}>
+                {t('activity_from')}{' '}
+                <Link href={`/profil/${ev.prev_owner_handle}`} style={{ color: 'var(--t2)', textDecoration: 'none' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t1)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t2)' }}
+                >
+                  @{ev.prev_owner_handle}
+                </Link>
+              </span>
+            )}
+          </div>
+        )}
 
         <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t4)', marginTop: '2px' }}>
           {fmtDate(ev.at)}
@@ -134,7 +220,7 @@ function EventRow({ ev, profileCache, isFriendsTab, followingSet }: {
       {/* Price */}
       <span style={{
         fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 500,
-        color: 'var(--t3)', whiteSpace: 'nowrap', flexShrink: 0,
+        color: soldFromYou ? '#e05252' : 'var(--t3)', whiteSpace: 'nowrap', flexShrink: 0,
       }}>
         {fmtNum(ev.price)} J
       </span>
@@ -148,11 +234,16 @@ export default function ActivityPage() {
   const [tab, setTab]                     = useState<Tab>('global')
   const [globalEvents, setGlobalEvents]   = useState<ActivityEvent[]>([])
   const [friendsEvents, setFriendsEvents] = useState<ActivityEvent[]>([])
+  const [mineEvents, setMineEvents]       = useState<ActivityEvent[]>([])
   const [following, setFollowing]         = useState<string[]>([])
   const [followingSet, setFollowingSet]   = useState<Set<string>>(new Set())
   const [profileCache, setProfileCache]   = useState<Record<string, Profile>>({})
   const [loading, setLoading]             = useState(true)
   const [friendsLoading, setFriendsLoading] = useState(false)
+  const [mineLoading, setMineLoading]     = useState(false)
+  const [unseenMine, setUnseenMine]       = useState(0)
+  const lastMineAt = useRef<string | null>(null)
+  const notifGranted = useRef(false)
 
   // Fetch and cache profiles for a list of handles/dids
   const cacheProfiles = useCallback(async (events: ActivityEvent[]) => {
@@ -173,6 +264,16 @@ export default function ActivityPage() {
     }
     setProfileCache(prev => ({ ...prev, ...fetched }))
   }, [profileCache])
+
+  // Request notification permission when user logs in
+  useEffect(() => {
+    if (!user) return
+    if (typeof Notification === 'undefined') return
+    if (Notification.permission === 'granted') { notifGranted.current = true; return }
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().then(p => { notifGranted.current = p === 'granted' })
+    }
+  }, [user?.did])
 
   // Load global feed
   useEffect(() => {
@@ -224,8 +325,61 @@ export default function ActivityPage() {
       .finally(() => setFriendsLoading(false))
   }, [tab, following.join(',')])
 
-  const events      = tab === 'friends' ? friendsEvents : globalEvents
-  const isLoading   = tab === 'friends' ? friendsLoading : loading
+  // Fetch mine tab (initial + polling every 60s)
+  const fetchMine = useCallback(async (isPolling = false) => {
+    if (!user?.did || !user?.handle) return
+    try {
+      const r = await fetch(`/api/activity?type=mine&did=${encodeURIComponent(user.did)}&handle=${encodeURIComponent(user.handle)}&limit=60`)
+      const data = await r.json()
+      const events: ActivityEvent[] = data.events ?? []
+
+      if (isPolling && lastMineAt.current) {
+        // Find new sold events (prev_owner_handle === myHandle) since last poll
+        const newSold = events.filter(
+          e => e.prev_owner_handle === user.handle && e.at > lastMineAt.current!
+        )
+        if (newSold.length > 0) {
+          setUnseenMine(prev => prev + newSold.length)
+          if (notifGranted.current) {
+            for (const ev of newSold) {
+              new Notification(t('activity_notif_title'), {
+                body: t('activity_notif_body', { buyer: ev.buyer_handle, subject: ev.subject_handle, price: ev.price }),
+                icon: '/favicon.ico',
+              })
+            }
+          }
+        }
+      }
+
+      if (events.length > 0) lastMineAt.current = events[0].at
+      setMineEvents(events)
+      await cacheProfiles(events)
+    } catch {}
+  }, [user?.did, user?.handle])
+
+  // Load mine tab when user logs in (initial fetch + polling)
+  useEffect(() => {
+    if (!user?.did) return
+    setMineLoading(true)
+    fetchMine(false).finally(() => setMineLoading(false))
+
+    const interval = setInterval(() => fetchMine(true), 60_000)
+    return () => clearInterval(interval)
+  }, [user?.did, fetchMine])
+
+  // Clear unseen badge when switching to mine tab
+  useEffect(() => {
+    if (tab === 'mine') setUnseenMine(0)
+  }, [tab])
+
+  const events    = tab === 'friends' ? friendsEvents : tab === 'mine' ? mineEvents : globalEvents
+  const isLoading = tab === 'friends' ? friendsLoading : tab === 'mine' ? mineLoading : loading
+
+  const tabs: { id: Tab; label: string; badge?: number }[] = [
+    { id: 'global',  label: t('activity_tab_everyone') },
+    { id: 'friends', label: t('activity_tab_friends')  },
+    ...(user ? [{ id: 'mine' as Tab, label: t('activity_tab_you'), badge: unseenMine }] : []),
+  ]
 
   return (
     <div className='activity-wrap'>
@@ -247,21 +401,31 @@ export default function ActivityPage() {
         marginBottom: '2rem',
         overflow: 'hidden',
       }}>
-        {([
-          { id: 'global',  label: t('activity_tab_everyone') },
-          { id: 'friends', label: t('activity_tab_friends')  },
-        ] as { id: Tab; label: string }[]).map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
+        {tabs.map((item, idx) => (
+          <button key={item.id} onClick={() => setTab(item.id)} style={{
             padding: '0.5rem 1.25rem',
             fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.1em',
-            background: tab === t.id ? 'rgba(0,229,255,0.1)' : 'transparent',
-            color: tab === t.id ? '#00e5ff' : 'var(--t3)',
+            background: tab === item.id ? 'rgba(0,229,255,0.1)' : 'transparent',
+            color: tab === item.id ? '#00e5ff' : 'var(--t3)',
             border: 'none',
-            borderRight: t.id === 'global' ? '1px solid rgba(0,229,255,0.15)' : 'none',
+            borderRight: idx < tabs.length - 1 ? '1px solid rgba(0,229,255,0.15)' : 'none',
             cursor: 'pointer',
             transition: 'background 0.15s, color 0.15s',
+            position: 'relative',
           }}>
-            {t.label}
+            {item.label}
+            {item.badge && item.badge > 0 ? (
+              <span style={{
+                position: 'absolute', top: 4, right: 4,
+                background: '#e05252', color: '#fff',
+                fontFamily: 'var(--font-mono)', fontSize: '9px', fontWeight: 700,
+                borderRadius: '50%', width: 16, height: 16,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                lineHeight: 1,
+              }}>
+                {item.badge > 9 ? '9+' : item.badge}
+              </span>
+            ) : null}
           </button>
         ))}
       </div>
@@ -301,10 +465,10 @@ export default function ActivityPage() {
         events.length === 0 ? (
           <div style={{ padding: '4rem 2rem', textAlign: 'center', border: '1px dashed rgba(0,229,255,0.1)' }}>
             <p style={{ fontFamily: 'var(--font-serif)', fontSize: '1.8rem', color: 'var(--t4)', fontStyle: 'italic', marginBottom: '0.75rem' }}>
-              {tab === 'friends' ? t('activity_empty_friends_title') : t('activity_empty_global_title')}
+              {tab === 'friends' ? t('activity_empty_friends_title') : tab === 'mine' ? t('activity_empty_you_title') : t('activity_empty_global_title')}
             </p>
             <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t4)', lineHeight: 1.8 }}>
-              {tab === 'friends' ? t('activity_empty_friends_sub') : t('activity_empty_global_sub')}
+              {tab === 'friends' ? t('activity_empty_friends_sub') : tab === 'mine' ? t('activity_empty_you_sub') : t('activity_empty_global_sub')}
             </p>
           </div>
         ) : (
@@ -316,6 +480,8 @@ export default function ActivityPage() {
                 profileCache={profileCache}
                 isFriendsTab={tab === 'friends'}
                 followingSet={followingSet}
+                isMineTab={tab === 'mine'}
+                myHandle={user?.handle}
               />
             ))}
           </div>

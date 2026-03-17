@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState } from 'react'
 import { Lang, TKey, translations, interpolate, formatDate as fmtDate, formatRelative as fmtRel } from '@/lib/i18n'
 
 interface LangCtx {
@@ -22,12 +22,7 @@ const LangContext = createContext<LangCtx>({
 })
 
 export function LangProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLang] = useState<Lang>('en')
-
-  useEffect(() => {
-    const l = navigator.language || ''
-    setLang(l.startsWith('fr') ? 'fr' : 'en')
-  }, [])
+  const [lang] = useState<Lang>('en')
 
   const locale = lang === 'fr' ? 'fr-FR' : 'en-US'
   const t = (key: TKey, vars?: Record<string, string | number>): string =>

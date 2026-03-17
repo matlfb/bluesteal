@@ -42,3 +42,9 @@ export function getFriendsActivity(dids: string[], limit = 50): ActivityEvent[] 
     .filter(e => set.has(e.buyer_did) || set.has(e.subject_did))
     .slice(0, limit)
 }
+
+export function getUserActivity(did: string, handle: string, limit = 50): ActivityEvent[] {
+  return read()
+    .filter(e => e.buyer_did === did || e.prev_owner_handle === handle)
+    .slice(0, limit)
+}

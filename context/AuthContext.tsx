@@ -103,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function hydrateSession(oauthSession: OAuthSession) {
     setSession(oauthSession)
     const did = oauthSession.did
+    let handle = did
 
     try {
       const res = await fetch(
@@ -110,6 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       )
       if (res.ok) {
         const profile = await res.json()
+        handle = profile.handle
         setUser({
           did,
           handle: profile.handle,
@@ -122,6 +124,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       setUser({ did, handle: did })
     }
+
+    // Establish server-side session cookie (fire-and-forget)
+    fetch('/api/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ did, handle }),
+    }).catch(() => {})
 
     // Fetch owned cards after session is ready
     await fetchOwnedDids(oauthSession)
@@ -141,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { getOAuthClient } = await import('@/lib/oauth-client')
     const client = getOAuthClient()
     await client.signIn(handle, {
-      scope: 'atproto transition:generic',
+      scope: 'atproto repo:blue.steal.card?action=create repo:app.bsky.feed.post?action=create',
     })
   }
 
@@ -151,6 +160,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await session.signOut()
       } catch {}
     }
+    // Clear server-side session cookie
+    fetch('/api/session', { method: 'DELETE' }).catch(() => {})
     setUser(null)
     setSession(null)
     setOwnedDids(new Set())

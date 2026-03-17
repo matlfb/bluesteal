@@ -5,11 +5,11 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import ProfileCard from '@/components/ProfileCard'
 import { BASE_PRICE } from '@/lib/bsky'
+import { Agent, RichText } from '@atproto/api'
 import { useLang } from '@/context/LangContext'
 import HistoryTab from '@/components/HistoryTab'
 import StealModal from '@/components/StealModal'
 import { useAuth } from '@/context/AuthContext'
-import { Agent, RichText } from '@atproto/api'
 import Confetti from '@/components/Confetti'
 
 interface FullProfile {
@@ -253,8 +253,12 @@ export default function ProfilPage() {
         if (data.newValue) setCardValue(data.newValue)
       }).catch(() => {})
       if (shareOnBsky) {
-        const from = prevOwner?.owner_handle ? ` from @${prevOwner.owner_handle}` : ''
-        const rt = new RichText({ text: `I just stole @${profile.handle}${from} via https://bluesteal.matlfb.com 🔥` })
+        const priceStr = price.toLocaleString()
+        const emoji = ['🥳', '🔥', '🤯'][Math.floor(Math.random() * 3)]
+        const text = prevOwner?.owner_handle
+          ? `I just bought @${profile.handle} from @${prevOwner.owner_handle} for ${priceStr} tokens on @bluesteal.app ${emoji}`
+          : `I bought @${profile.handle} for ${priceStr} tokens on @bluesteal.app ${emoji}`
+        const rt = new RichText({ text })
         await rt.detectFacets(agent)
         agent.post({ text: rt.text, facets: rt.facets }).catch(() => {})
       }

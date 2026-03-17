@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
 import { useLang } from '@/context/LangContext'
 
@@ -26,14 +27,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+    <div style={{ minHeight: '100vh', marginTop: '-60px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
       <div style={{ width: '100%', maxWidth: 420 }}>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#00e5ff', letterSpacing: '0.2em', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <Link href="/" style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#00e5ff', letterSpacing: '0.2em', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '1rem', textDecoration: 'none' }}>
           BLUESTEAL
           <span style={{ display: 'block', flex: 1, height: 1, background: '#00b4d8', maxWidth: 60 }} />
-        </div>
+        </Link>
         <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem', lineHeight: 1.1, color: '#e8e6dc', marginBottom: '0.5rem' }}>{t('sign_in_title')}</h1>
-        <p style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', color: '#8a8878', fontWeight: 300, marginBottom: '2.5rem', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
+        <p style={{ fontFamily: 'var(--font-sans)', fontSize: '1rem', color: '#8a8878', fontWeight: 300, marginBottom: '2.5rem', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
           {t('sign_in_subtitle')}
         </p>
         <form onSubmit={handleSubmit}>

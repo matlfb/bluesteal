@@ -58,6 +58,8 @@ export default function Navbar() {
   const { user, loading: authLoading, signOut, jetons } = useAuth()
   const { t, fmtNum } = useLang()
 
+  if ((pathname === '/' || pathname === '/login') && !user && !authLoading) return null
+
   const [scrolled, setScrolled] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -156,8 +158,8 @@ export default function Navbar() {
         </Link>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
-          {/* Desktop nav links */}
-          <div className="nav-desktop-links" style={{ alignItems: 'center', gap: '1.75rem' }}>
+          {/* Desktop nav links — only when connected */}
+          {user && <div className="nav-desktop-links" style={{ alignItems: 'center', gap: '1.75rem' }}>
             {navLinks.map(({ href, label }) => {
               const active = pathname === href
               return (
@@ -167,10 +169,10 @@ export default function Navbar() {
                 >{label}</Link>
               )
             })}
-          </div>
+          </div>}
 
-          {/* Desktop search — inline after nav links */}
-          <div ref={searchWrapRef} className="nav-desktop-search-wrap" style={{ position: 'relative' }}>
+          {/* Desktop search — only when connected */}
+          {user && <div ref={searchWrapRef} className="nav-desktop-search-wrap" style={{ position: 'relative' }}>
             {searchOpen ? (
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: 260 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: 10, pointerEvents: 'none' }}>
@@ -230,7 +232,7 @@ export default function Navbar() {
                 ))}
               </div>
             )}
-          </div>
+          </div>}
 
           {/* Jetons */}
           {user && (
@@ -292,15 +294,15 @@ export default function Navbar() {
         <Link href="/" className="nav-bottom-item">
           <IconHome active={pathname === '/'} />
         </Link>
-        <button className="nav-bottom-item" onClick={openSearch}>
+        {user && <button className="nav-bottom-item" onClick={openSearch}>
           <IconSearch active={searchOpen} />
-        </button>
-        <Link href="/activity" className="nav-bottom-item">
+        </button>}
+        {user && <Link href="/activity" className="nav-bottom-item">
           <IconActivity active={pathname === '/activity'} />
-        </Link>
-        <Link href="/leaderboard" className="nav-bottom-item">
+        </Link>}
+        {user && <Link href="/leaderboard" className="nav-bottom-item">
           <IconLeaderboard active={pathname === '/leaderboard'} />
-        </Link>
+        </Link>}
         <Link href={user ? `/profil/${user.handle}` : '/login'} className="nav-bottom-item">
           {user?.avatar
             ? <img src={user.avatar} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover', border: pathname.startsWith('/profil') ? '2px solid #00e5ff' : '2px solid transparent', display: 'block' }} />

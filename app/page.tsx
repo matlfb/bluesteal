@@ -6,8 +6,8 @@ import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
 import ProfileCard from '@/components/ProfileCard'
 import { BASE_PRICE } from '@/lib/bsky'
-import { Agent, RichText } from '@atproto/api'
 import StealModal from '@/components/StealModal'
+import { Agent, RichText } from '@atproto/api'
 import { useLang } from '@/context/LangContext'
 
 interface Card {
@@ -172,8 +172,12 @@ export default function HomePage() {
       setShowConfetti(true)
       setModalCard(null)
       if (shareOnBsky) {
-        const from = modalCard.owner ? ` from @${modalCard.owner}` : ''
-        const rt = new RichText({ text: `I just stole @${modalCard.handle}${from} via https://bluesteal.matlfb.com 🔥` })
+        const price = modalCard.price.toLocaleString()
+        const emoji = ['🥳', '🔥', '🤯'][Math.floor(Math.random() * 3)]
+        const text = modalCard.owner
+          ? `I just bought @${modalCard.handle} from @${modalCard.owner} for ${price} tokens on @bluesteal.app ${emoji}`
+          : `I bought @${modalCard.handle} for ${price} tokens on @bluesteal.app ${emoji}`
+        const rt = new RichText({ text })
         rt.detectFacets(agent).then(() => agent.post({ text: rt.text, facets: rt.facets })).catch(() => {})
       }
     } catch (e) { console.error('Steal failed:', e) }
@@ -187,42 +191,35 @@ export default function HomePage() {
   return (
     <div>
       {!user && (
-        <>
-          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '5rem 2.5rem 3.5rem' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#00e5ff', letterSpacing: '0.2em', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ minHeight: '100vh', marginTop: '-60px', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'flex-start' : 'center', padding: isMobile ? '2rem 1.5rem' : '2rem' }}>
+          <div style={{ textAlign: isMobile ? 'left' : 'center', maxWidth: isMobile ? 'none' : 600 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#00e5ff', letterSpacing: '0.2em', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'flex-start' : 'center', gap: '1rem' }}>
+              {!isMobile && <span style={{ display: 'block', width: 40, height: 1, background: '#00b4d8' }} />}
               {t('home_label')}
               <span style={{ display: 'block', width: 40, height: 1, background: '#00b4d8' }} />
             </div>
-            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '4rem', lineHeight: 1.1, fontWeight: 400, color: '#e8e6dc', marginBottom: '1.25rem' }}>
-              {t('home_h1a')}<br /><em style={{ fontStyle: 'italic', color: '#00e5ff' }}>{t('home_h1b')}</em>
+            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: isMobile ? '3rem' : '4rem', lineHeight: 1.1, fontWeight: 400, color: '#e8e6dc', marginBottom: '1.25rem' }}>
+              {t('home_h1a')} <em style={{ fontStyle: 'italic', color: '#00e5ff' }}>{t('home_h1b')}</em>
             </h1>
-            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '1.05rem', color: '#8a8878', maxWidth: 520, lineHeight: 1.8, fontWeight: 300, marginBottom: '2.5rem' }}>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: isMobile ? '1rem' : '1.05rem', color: '#8a8878', lineHeight: 1.8, fontWeight: 300, marginBottom: '2.5rem' }}>
               {t('home_sub')}
             </p>
-            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-              <Link href="/login" style={{ display: 'inline-flex', alignItems: 'center', padding: '0.75rem 1.75rem', background: '#00b4d8', color: '#0a0d11', fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 500, letterSpacing: '0.05em', textDecoration: 'none' }}>
-                {t('home_sign_in')}
-              </Link>
-              <a href="#explorer" style={{ display: 'inline-flex', alignItems: 'center', padding: '0.75rem 1.75rem', border: '1px solid rgba(0,229,255,0.2)', color: '#8a8878', fontFamily: 'var(--font-mono)', fontSize: '13px', letterSpacing: '0.05em', textDecoration: 'none' }}>
-                {t('home_browse')}
-              </a>
-            </div>
+            <Link href="/login" style={{ display: 'inline-flex', alignItems: 'center', padding: '0.75rem 1.75rem', background: '#00b4d8', color: '#0a0d11', fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 500, letterSpacing: '0.05em', textDecoration: 'none' }}>
+              {t('home_sign_in')}
+            </Link>
           </div>
-          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 2.5rem' }}>
-            <div style={{ height: 1, background: 'rgba(0,229,255,0.08)' }} />
-          </div>
-        </>
+        </div>
       )}
 
-      {(recentCards.length > 0 || recentLoading) && (
+      {user && (recentCards.length > 0 || recentLoading) && (
         <div style={{ padding: (isMobile || isTablet) ? 0 : '3.5rem 0 0' }}>
           <SectionTitle isMobile={isMobile} isTablet={isTablet}>Collectés récemment</SectionTitle>
-          <Carousel cards={recentCards} loading={recentLoading} onCardClick={user ? setModalCard : undefined} userDid={user?.did} ownedDids={ownedDids} />
+          <Carousel cards={recentCards} loading={recentLoading} onCardClick={setModalCard} userDid={user.did} ownedDids={ownedDids} />
           <Divider />
         </div>
       )}
 
-      <div id="explorer" style={{ padding: isMobile ? '20px' : '3.5rem 0 4rem' }}>
+      {user && <div id="explorer" style={{ padding: isMobile ? '20px' : '3.5rem 0 4rem' }}>
         <SectionTitle isMobile={isMobile} isTablet={isTablet} compact>Explorer</SectionTitle>
         <div style={{ maxWidth: isMobile ? 'none' : 1100, margin: isMobile ? 0 : '0 auto', padding: isMobile ? 0 : '0 2.5rem' }}>
           <SegmentedControl tabs={tabLabels} active={activeTab} onChange={setActiveTab} />
@@ -250,7 +247,7 @@ export default function HomePage() {
         {activeTab === 1 && (
           <CardGrid cards={hotCards} loading={hotLoading} onCardClick={user ? setModalCard : undefined} userDid={user?.did} isMobile={isMobile} />
         )}
-      </div>
+      </div>}
 
       <Confetti active={showConfetti} onDone={() => setShowConfetti(false)} />
       <StealModal
