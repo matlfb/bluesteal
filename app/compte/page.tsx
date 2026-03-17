@@ -249,7 +249,7 @@ export default function ComptePage() {
       <div className='profile-tabs-section'>
 
         {/* Tab bar */}
-        <div style={{ display: 'flex', marginBottom: '2rem', borderBottom: '1px solid rgba(0,229,255,0.08)', paddingBottom: 0 }}>
+        <div style={{ display: 'flex', marginBottom: '2rem', borderBottom: '1px solid rgba(0,229,255,0.08)', paddingBottom: 0, position: 'sticky', top: 60, zIndex: 10, background: 'var(--bg)' }}>
           {([
             { id: 'collection', label: t('account_tab_collection') },
             { id: 'history',    label: t('account_tab_history')    },
@@ -273,15 +273,15 @@ export default function ComptePage() {
         {tab === 'collection' && (
           <div>
             {collectionLoading ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 200px)', gap: '1rem', alignItems: 'start' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', alignItems: 'start' }}>
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} style={{ aspectRatio: '4/5', background: '#0f1318', opacity: 0.5 }} />
                 ))}
               </div>
             ) : ownedCards.length > 0 ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 200px)', gap: '1rem', alignItems: 'start' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', alignItems: 'start' }}>
                 {ownedCards.map(card => (
-                  <Link key={card.handle} href={`/profil/${card.handle}`} style={{ textDecoration: 'none', display: 'block' }}>
+                  <Link key={card.handle} href={`/profil/${card.handle}`} style={{ textDecoration: 'none', display: 'block', width: '100%', minWidth: 0 }}>
                     <ProfileCard
                       handle={card.handle}
                       displayName={card.displayName}
@@ -325,12 +325,7 @@ export default function ComptePage() {
               {posts.map(post => {
                 const bskyUrl = `https://bsky.app/profile/${p.handle}/post/${post.uri.split('/').pop()}`
                 return (
-                  <a key={post.uri} href={bskyUrl} target="_blank" rel="noopener" style={{
-                    display: 'grid', gridTemplateColumns: '100px 1fr auto',
-                    alignItems: 'start', gap: '2rem', padding: '1.5rem 0',
-                    borderBottom: '1px solid rgba(255,255,255,0.04)',
-                    textDecoration: 'none', color: 'inherit', transition: 'opacity 0.15s',
-                  }}
+                  <a key={post.uri} href={bskyUrl} target="_blank" rel="noopener" className="post-row"
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
                   >
@@ -345,7 +340,7 @@ export default function ComptePage() {
                         ))}
                       </div>
                     </div>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '16px', color: 'var(--t3)', paddingTop: 2 }}>→</span>
+                    <span className="post-row-arrow" style={{ fontFamily: 'var(--font-mono)', fontSize: '16px', color: 'var(--t3)', paddingTop: 2 }}>→</span>
                   </a>
                 )
               })}

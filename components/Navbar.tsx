@@ -67,6 +67,7 @@ export default function Navbar() {
   const [focusedIdx, setFocusedIdx] = useState(-1)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const searchWrapRef = useRef<HTMLDivElement>(null)
+  const mobileSearchRef = useRef<HTMLDivElement>(null)
   const userDropdownRef = useRef<HTMLDivElement>(null)
   const debouncedQuery = useDebounce(query, 280)
 
@@ -84,7 +85,10 @@ export default function Navbar() {
 
   useEffect(() => {
     function handle(e: MouseEvent) {
-      if (searchWrapRef.current && !searchWrapRef.current.contains(e.target as Node)) closeSearch()
+      if (
+        searchWrapRef.current && !searchWrapRef.current.contains(e.target as Node) &&
+        mobileSearchRef.current && !mobileSearchRef.current.contains(e.target as Node)
+      ) closeSearch()
       if (userDropdownRef.current && !userDropdownRef.current.contains(e.target as Node)) setDropdownOpen(false)
     }
     document.addEventListener('mousedown', handle)
@@ -133,90 +137,27 @@ export default function Navbar() {
     return String(n)
   }
 
-  const faded = searchOpen
-    ? { opacity: 0.25, pointerEvents: 'none' as const, transition: 'opacity 0.2s' }
-    : { opacity: 1, transition: 'opacity 0.2s' }
   const showDropdown = searchOpen && query.trim().length > 0
 
   return (
     <>
-      {searchOpen && (
-        <div onClick={closeSearch} style={{ position: 'fixed', inset: 0, zIndex: 190, background: 'rgba(14,14,12,0.6)', backdropFilter: 'blur(2px)' }} />
-      )}
-
       {/* Top bar */}
       <nav style={{
         position: 'fixed', top: 0, width: '100%', zIndex: 200, height: '60px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 1.25rem',
-        background: scrolled || searchOpen ? 'rgba(14,14,12,0.96)' : '#0a0d11',
-        backdropFilter: scrolled || searchOpen ? 'blur(12px)' : 'none',
-        borderBottom: `1px solid ${scrolled || searchOpen ? 'rgba(0,229,255,0.1)' : 'transparent'}`,
+        padding: '0 2.5rem',
+        background: scrolled ? 'rgba(14,14,12,0.96)' : '#0a0d11',
+        backdropFilter: scrolled ? 'blur(12px)' : 'none',
+        borderBottom: `1px solid ${scrolled ? 'rgba(0,229,255,0.1)' : 'transparent'}`,
         transition: 'background 0.25s, border-color 0.25s',
       }}>
         <Link href="/" onClick={closeSearch} style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#00e5ff', letterSpacing: '0.08em', textDecoration: 'none', flexShrink: 0 }}>
           BLUESTEAL
         </Link>
 
-        {/* Desktop search bar */}
-        <div ref={searchWrapRef} className="nav-search-wrap">
-          {searchOpen && (
-            <>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: 12, pointerEvents: 'none' }}>
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-                <input
-                  ref={searchInputRef} type="text" value={query}
-                  onChange={e => setQuery(e.target.value)} onKeyDown={handleKeyDown}
-                  placeholder={t('nav_search_placeholder')}
-                  style={{ width: '100%', padding: '0.5rem 2.5rem 0.5rem 2.2rem', background: '#0f1318', border: '1px solid rgba(0,229,255,0.25)', color: '#e8e6dc', fontFamily: 'var(--font-mono)', fontSize: '13px', outline: 'none', letterSpacing: '0.02em' }}
-                />
-                {query && (
-                  <button onClick={() => setQuery('')} style={{ position: 'absolute', right: 10, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t3)', fontSize: '16px', lineHeight: 1, padding: '2px 4px' }}>x</button>
-                )}
-              </div>
-              {showDropdown && (
-                <div style={{ position: 'absolute', top: 'calc(100% + 10px)', left: 0, right: 0, background: '#0f1318', border: '1px solid rgba(0,229,255,0.15)', zIndex: 300, maxHeight: 420, overflowY: 'auto' }}>
-                  {searching && !results.length && (
-                    <div style={{ padding: '1rem 1.25rem', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t3)' }}>{t('nav_searching')}</div>
-                  )}
-                  {!searching && results.length === 0 && query.trim() && (
-                    <div style={{ padding: '1rem 1.25rem', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t3)' }}>
-                      {t('nav_no_results', { query })}
-                    </div>
-                  )}
-                  {results.map((r, i) => (
-                    <Link key={r.did} href={`/profil/${r.handle}`} onClick={closeSearch}
-                      style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1.25rem', textDecoration: 'none', color: 'inherit', background: i === focusedIdx ? 'rgba(0,229,255,0.06)' : 'transparent', borderBottom: i < results.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none', borderLeft: `3px solid ${i === focusedIdx ? '#00e5ff' : 'transparent'}`, transition: 'background 0.1s, border-left-color 0.1s', cursor: 'pointer' }}
-                      onMouseEnter={e => { setFocusedIdx(i); (e.currentTarget as HTMLElement).style.background = 'rgba(0,229,255,0.06)'; (e.currentTarget as HTMLElement).style.borderLeftColor = '#00e5ff' }}
-                      onMouseLeave={e => { if (focusedIdx !== i) { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.borderLeftColor = 'transparent' } }}
-                    >
-                      <div style={{ width: 38, height: 38, flexShrink: 0, background: '#14191f', overflow: 'hidden' }}>
-                        {r.avatar ? <img src={r.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontFamily: 'var(--font-serif)', fontSize: '1.2rem', color: '#00e5ff', fontStyle: 'italic', opacity: 0.4 }}>{r.displayName.charAt(0)}</span></div>}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 600, color: '#e8e6dc', marginBottom: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.displayName}</p>
-                        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          @{r.handle}
-                          {r.followersCount > 0 && <span style={{ marginLeft: '0.75rem', color: 'var(--t4)' }}>{t('nav_followers_short', { n: formatFollowers(r.followersCount) })}</span>}
-                        </p>
-                      </div>
-                      <div style={{ flexShrink: 0, textAlign: 'right' }}>
-                        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#00e5ff' }}>{fmtNum(calcPrice(r.followersCount))} J</p>
-                        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--t4)', marginTop: '2px' }}>{t('nav_price_label')}</p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
           {/* Desktop nav links */}
-          <div className="nav-desktop-links" style={{ alignItems: 'center', gap: '1.75rem', ...faded }}>
+          <div className="nav-desktop-links" style={{ alignItems: 'center', gap: '1.75rem' }}>
             {navLinks.map(({ href, label }) => {
               const active = pathname === href
               return (
@@ -228,20 +169,72 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* Desktop search button */}
-          {!searchOpen && (
-            <button className="nav-desktop-search" onClick={openSearch}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#00e5ff' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#8a8878' }}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              {t('nav_search')}
-            </button>
-          )}
+          {/* Desktop search — inline after nav links */}
+          <div ref={searchWrapRef} className="nav-desktop-search-wrap" style={{ position: 'relative' }}>
+            {searchOpen ? (
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: 260 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: 10, pointerEvents: 'none' }}>
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input
+                  ref={searchInputRef} type="text" value={query}
+                  onChange={e => setQuery(e.target.value)} onKeyDown={handleKeyDown}
+                  placeholder={t('nav_search_placeholder')}
+                  style={{ width: '100%', padding: '0.45rem 2.2rem 0.45rem 2rem', background: '#0f1318', border: '1px solid rgba(0,229,255,0.25)', color: '#e8e6dc', fontFamily: 'var(--font-mono)', fontSize: '13px', outline: 'none', letterSpacing: '0.02em' }}
+                />
+                {query && (
+                  <button onClick={() => setQuery('')} style={{ position: 'absolute', right: 8, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t3)', fontSize: '16px', lineHeight: 1, padding: '2px 4px' }}>x</button>
+                )}
+              </div>
+            ) : (
+              <button className="nav-desktop-search" onClick={openSearch}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#00e5ff' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#8a8878' }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                {t('nav_search')}
+              </button>
+            )}
+
+            {showDropdown && (
+              <div style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: 360, background: '#0f1318', border: '1px solid rgba(0,229,255,0.15)', zIndex: 300, maxHeight: 420, overflowY: 'auto' }}>
+                {searching && !results.length && (
+                  <div style={{ padding: '1rem 1.25rem', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t3)' }}>{t('nav_searching')}</div>
+                )}
+                {!searching && results.length === 0 && query.trim() && (
+                  <div style={{ padding: '1rem 1.25rem', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t3)' }}>
+                    {t('nav_no_results', { query })}
+                  </div>
+                )}
+                {results.map((r, i) => (
+                  <Link key={r.did} href={`/profil/${r.handle}`} onClick={closeSearch}
+                    style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1.25rem', textDecoration: 'none', color: 'inherit', background: i === focusedIdx ? 'rgba(0,229,255,0.06)' : 'transparent', borderBottom: i < results.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none', borderLeft: `3px solid ${i === focusedIdx ? '#00e5ff' : 'transparent'}`, transition: 'background 0.1s, border-left-color 0.1s', cursor: 'pointer' }}
+                    onMouseEnter={e => { setFocusedIdx(i); (e.currentTarget as HTMLElement).style.background = 'rgba(0,229,255,0.06)'; (e.currentTarget as HTMLElement).style.borderLeftColor = '#00e5ff' }}
+                    onMouseLeave={e => { if (focusedIdx !== i) { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.borderLeftColor = 'transparent' } }}
+                  >
+                    <div style={{ width: 38, height: 38, flexShrink: 0, background: '#14191f', overflow: 'hidden' }}>
+                      {r.avatar ? <img src={r.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontFamily: 'var(--font-serif)', fontSize: '1.2rem', color: '#00e5ff', fontStyle: 'italic', opacity: 0.4 }}>{r.displayName.charAt(0)}</span></div>}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 600, color: '#e8e6dc', marginBottom: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.displayName}</p>
+                      <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        @{r.handle}
+                        {r.followersCount > 0 && <span style={{ marginLeft: '0.75rem', color: 'var(--t4)' }}>{t('nav_followers_short', { n: formatFollowers(r.followersCount) })}</span>}
+                      </p>
+                    </div>
+                    <div style={{ flexShrink: 0, textAlign: 'right' }}>
+                      <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#00e5ff' }}>{fmtNum(calcPrice(r.followersCount))} J</p>
+                      <p style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--t4)', marginTop: '2px' }}>{t('nav_price_label')}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Jetons */}
           {user && (
-            <Link href="/jetons" onClick={closeSearch} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontFamily: 'var(--font-mono)', fontSize: '12px', border: `1px solid ${pathname === '/jetons' ? 'rgba(0,229,255,0.35)' : 'rgba(0,229,255,0.15)'}`, padding: '0 0.9rem', height: '35px', textDecoration: 'none', background: pathname === '/jetons' ? 'rgba(0,229,255,0.04)' : 'none', flexShrink: 0, ...faded }}
+            <Link href="/jetons" onClick={closeSearch} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontFamily: 'var(--font-mono)', fontSize: '12px', border: `1px solid ${pathname === '/jetons' ? 'rgba(0,229,255,0.35)' : 'rgba(0,229,255,0.15)'}`, padding: '0 0.9rem', height: '35px', textDecoration: 'none', background: pathname === '/jetons' ? 'rgba(0,229,255,0.04)' : 'none', flexShrink: 0 }}
               onMouseEnter={e => { if (pathname !== '/jetons') { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.3)'; (e.currentTarget as HTMLElement).style.background = 'rgba(0,229,255,0.03)' } }}
               onMouseLeave={e => { if (pathname !== '/jetons') { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.15)'; (e.currentTarget as HTMLElement).style.background = 'none' } }}
             >
@@ -251,7 +244,7 @@ export default function Navbar() {
           )}
 
           {/* Desktop user dropdown */}
-          <div className="nav-desktop-user" style={{ ...faded }}>
+          <div className="nav-desktop-user">
             {authLoading ? (
               <div style={{ width: 34, height: 34, background: '#14191f', border: '1px solid rgba(0,229,255,0.1)', animation: 'pulse 1.5s infinite' }} />
             ) : user ? (
@@ -318,7 +311,7 @@ export default function Navbar() {
 
       {/* Mobile search overlay */}
       {searchOpen && (
-        <div className="nav-mobile-search">
+        <div ref={mobileSearchRef} className="nav-mobile-search">
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: 12, pointerEvents: 'none' }}>
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -327,7 +320,7 @@ export default function Navbar() {
               ref={searchInputRef} type="text" value={query}
               onChange={e => setQuery(e.target.value)} onKeyDown={handleKeyDown}
               placeholder={t('nav_search_placeholder')}
-              style={{ width: '100%', padding: '0.6rem 2.5rem 0.6rem 2.2rem', background: '#0f1318', border: '1px solid rgba(0,229,255,0.25)', color: '#e8e6dc', fontFamily: 'var(--font-mono)', fontSize: '13px', outline: 'none', letterSpacing: '0.02em' }}
+              style={{ width: '100%', padding: '0.6rem 2.5rem 0.6rem 2.2rem', background: '#0f1318', border: '1px solid rgba(0,229,255,0.25)', color: '#e8e6dc', fontFamily: 'var(--font-mono)', fontSize: "16px", outline: 'none', letterSpacing: '0.02em' }}
             />
             {query && (
               <button onClick={() => setQuery('')} style={{ position: 'absolute', right: 10, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t3)', fontSize: '16px', lineHeight: 1, padding: '2px 4px' }}>x</button>

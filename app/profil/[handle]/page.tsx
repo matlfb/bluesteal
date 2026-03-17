@@ -10,6 +10,7 @@ import HistoryTab from '@/components/HistoryTab'
 import StealModal from '@/components/StealModal'
 import { useAuth } from '@/context/AuthContext'
 import { Agent, RichText } from '@atproto/api'
+import Confetti from '@/components/Confetti'
 
 interface FullProfile {
   did: string
@@ -104,6 +105,7 @@ export default function ProfilPage() {
   const isOwned = (!!profile && ownedDids.has(profile.did)) || stolen
   const isOwnProfile = !!user && !!profile && user.did === profile.did
   const [stealing, setStealing] = useState(false)
+  const [showConfetti, setShowConfetti] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [historyEvents, setHistoryEvents] = useState<HistoryEvent[]>([])
   const [tab, setTab] = useState<Tab>('collection')
@@ -256,6 +258,7 @@ export default function ProfilPage() {
         await rt.detectFacets(agent)
         agent.post({ text: rt.text, facets: rt.facets }).catch(() => {})
       }
+      setShowConfetti(true)
       setStolen(true)
       setModalOpen(false)
     } catch (e) {
@@ -404,7 +407,7 @@ export default function ProfilPage() {
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           marginBottom: '2rem', borderBottom: '1px solid rgba(0,229,255,0.08)',
-          paddingBottom: 0,
+          paddingBottom: 0, position: 'sticky', top: 60, zIndex: 10, background: 'var(--bg)',
         }}>
           <div style={{ display: 'flex', gap: 0 }}>
             {([
@@ -439,7 +442,7 @@ export default function ProfilPage() {
             ) : ownedCards.length > 0 ? (
               <div className="collection-grid">
                 {ownedCards.map(card => (
-                  <Link key={card.handle} href={`/profil/${card.handle}`} style={{ textDecoration: 'none', display: 'block' }}>
+                  <Link key={card.handle} href={`/profil/${card.handle}`} style={{ textDecoration: 'none', display: 'block', width: '100%', minWidth: 0 }}>
                     <ProfileCard
                       handle={card.handle}
                       displayName={card.displayName}
@@ -493,12 +496,7 @@ export default function ProfilPage() {
               {posts.map(post => {
                 const bskyUrl = `https://bsky.app/profile/${profile!.handle}/post/${post.uri.split('/').pop()}`
                 return (
-                  <a key={post.uri} href={bskyUrl} target="_blank" rel="noopener" style={{
-                    display: 'grid', gridTemplateColumns: '100px 1fr auto',
-                    alignItems: 'start', gap: '2rem', padding: '1.5rem 0',
-                    borderBottom: '1px solid rgba(255,255,255,0.04)',
-                    textDecoration: 'none', color: 'inherit', transition: 'opacity 0.15s',
-                  }}
+                  <a key={post.uri} href={bskyUrl} target="_blank" rel="noopener" className="post-row"
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1' }}
                   >
@@ -513,7 +511,7 @@ export default function ProfilPage() {
                         ))}
                       </div>
                     </div>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '16px', color: 'var(--t3)', paddingTop: 2 }}>→</span>
+                    <span className="post-row-arrow" style={{ fontFamily: 'var(--font-mono)', fontSize: '16px', color: 'var(--t3)', paddingTop: 2 }}>→</span>
                   </a>
                 )
               })}
@@ -525,6 +523,7 @@ export default function ProfilPage() {
 
 
       {/* Steal modal */}
+      <Confetti active={showConfetti} onDone={() => setShowConfetti(false)} />
       <StealModal
         open={modalOpen}
         handle={profile?.handle ?? ''}

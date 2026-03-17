@@ -16,6 +16,36 @@ interface Props {
   onClose: () => void
 }
 
+let _hapticLabel: HTMLLabelElement | null = null
+
+function ensureHapticDOM() {
+  if (_hapticLabel || typeof document === 'undefined') return
+  const id = 'bs-haptic'
+  const input = document.createElement('input')
+  input.type = 'checkbox'
+  input.setAttribute('switch', '')
+  input.id = id
+  input.style.cssText = 'position:fixed;opacity:0;pointer-events:none;width:0;height:0;'
+  const label = document.createElement('label')
+  label.setAttribute('for', id)
+  label.style.cssText = 'position:fixed;opacity:0;pointer-events:none;'
+  label.appendChild(input)
+  document.body.appendChild(label)
+  _hapticLabel = label
+}
+
+function hapticSuccess() {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    navigator.vibrate([30, 60, 40])
+    return
+  }
+  // iOS: checkbox switch trick triggers Taptic Engine
+  ensureHapticDOM()
+  if (!_hapticLabel) return
+  _hapticLabel.click()
+  setTimeout(() => _hapticLabel?.click(), 90)
+}
+
 export default function StealModal({ open, handle, displayName, avatar, price, prevOwnerHandle, isOwned, stealing, onConfirm, onClose }: Props) {
   const [share, setShare] = useState(false)
   const { t, fmtNum } = useLang()
@@ -31,9 +61,8 @@ export default function StealModal({ open, handle, displayName, avatar, price, p
   if (!open) return null
 
   return (
-    <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(10,13,17,0.75)', backdropFilter: 'blur(4px)' }} />
-      <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 501, background: 'var(--surface)', border: '1px solid rgba(0,229,255,0.2)', width: 340, overflow: 'hidden' }}>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(10,13,17,0.75)', backdropFilter: 'blur(4px)' }}>
+      <div onClick={e => e.stopPropagation()} style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 501, background: 'var(--surface)', border: '1px solid rgba(0,229,255,0.2)', width: 340, overflow: 'hidden' }}>
         <div style={{ height: 2, background: 'var(--brand)', width: '100%' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.5rem 1.5rem 1.25rem' }}>
           <div style={{ width: 52, height: 52, flexShrink: 0, background: 'var(--elevated)', overflow: 'hidden' }}>
@@ -69,13 +98,16 @@ export default function StealModal({ open, handle, displayName, avatar, price, p
             onMouseLeave={e => { (e.currentTarget).style.color = 'var(--t3)'; (e.currentTarget).style.background = 'none' }}>
             {t('modal_cancel')}
           </button>
-          <button onClick={() => onConfirm(share)} disabled={isOwned || stealing} style={{ padding: '0.9rem', border: 'none', background: isOwned ? 'transparent' : 'rgba(0,229,255,0.08)', fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.08em', color: isOwned ? 'var(--t4)' : stealing ? 'var(--t3)' : 'var(--brand)', cursor: isOwned || stealing ? 'default' : 'pointer', transition: 'background 0.15s' }}
+          <button
+            onClick={() => { hapticSuccess(); onConfirm(share) }}
+            disabled={isOwned || stealing}
+            style={{ padding: '0.9rem', border: 'none', background: isOwned ? 'transparent' : 'rgba(0,229,255,0.08)', fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.08em', color: isOwned ? 'var(--t4)' : stealing ? 'var(--t3)' : 'var(--brand)', cursor: isOwned || stealing ? 'default' : 'pointer', transition: 'background 0.15s' }}
             onMouseEnter={e => { if (!isOwned && !stealing) (e.currentTarget).style.background = 'rgba(0,229,255,0.15)' }}
             onMouseLeave={e => { if (!isOwned && !stealing) (e.currentTarget).style.background = 'rgba(0,229,255,0.08)' }}>
             {stealing ? t('modal_confirming') : isOwned ? t('modal_owned') : t('modal_confirm')}
           </button>
         </div>
       </div>
-    </>
+    </div>
   )
 }

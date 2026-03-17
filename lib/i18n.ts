@@ -4,7 +4,7 @@ export const translations = {
   en: {
     // Nav
     nav_market: 'MARKET', nav_activity: 'ACTIVITY', nav_leaderboard: 'LEADERBOARD',
-    nav_search: 'SEARCH', nav_search_placeholder: 'Search a Bluesky profile…',
+    nav_search: 'SEARCH', nav_search_placeholder: 'Search a profile…',
     nav_searching: 'Searching…', nav_no_results: 'No results for "{query}"',
     nav_my_account: 'My account →', nav_sign_out: 'Sign out', nav_sign_in: 'SIGN IN →',
     nav_followers_short: '{n} followers', nav_price_label: 'PRICE',
@@ -68,9 +68,9 @@ export const translations = {
     activity_bought: 'bought', activity_bought_by: 'was bought by', activity_from: 'from',
     // Homepage
     home_label: 'BLUESTEAL',
-    home_h1a: "Steal your friends'", home_h1b: 'accounts.',
-    home_sub: "Every Bluesky profile becomes a collectible card. Buy, steal, resell.\nThe more a card is stolen, the more it's worth. Make a profit.",
-    home_sign_in: 'Bluesky Sign In →', home_browse: 'Browse cards',
+    home_h1a: "Collect your friends'", home_h1b: 'accounts.',
+    home_sub: "Every Bluesky profile becomes a collectible card. Buy, invest, and grow their value.\nThe more a card is in demand, the more it's worth.",
+    home_sign_in: 'Sign In →', home_browse: 'Browse cards',
     home_hot: 'Hot', home_recent: 'Recent purchases', home_friends: 'Your friends',
     home_friends_login_title: 'Sign in to see your friends',
     home_friends_login_sub: 'Your Bluesky follows will appear here as cards.',
@@ -85,7 +85,7 @@ export const translations = {
   },
   fr: {
     nav_market: 'MARCHÉ', nav_activity: 'ACTIVITÉ', nav_leaderboard: 'CLASSEMENT',
-    nav_search: 'RECHERCHER', nav_search_placeholder: 'Chercher un profil Bluesky…',
+    nav_search: 'RECHERCHER', nav_search_placeholder: 'Chercher un profil…',
     nav_searching: 'Recherche…', nav_no_results: 'Aucun résultat pour « {query} »',
     nav_my_account: 'Mon compte →', nav_sign_out: 'Déconnexion', nav_sign_in: 'CONNEXION →',
     nav_followers_short: '{n} abonnés', nav_price_label: 'PRIX',
@@ -140,9 +140,9 @@ export const translations = {
     activity_empty_global_sub: 'Les premières transactions apparaîtront ici.',
     activity_bought: 'a acheté', activity_bought_by: 'a été acheté par', activity_from: 'à',
     home_label: 'BLUESTEAL',
-    home_h1a: 'Vole les comptes', home_h1b: 'de tes amis.',
-    home_sub: "Chaque profil Bluesky devient une carte à collectionner. Achète, vole, revends.\nPlus une carte est volée, plus elle vaut cher. Fais du profit.",
-    home_sign_in: 'Connexion Bluesky →', home_browse: 'Voir les cartes',
+    home_h1a: 'Collectionne les comptes', home_h1b: 'de tes amis.',
+    home_sub: "Chaque profil Bluesky devient une carte à collectionner. Achète, investis, et augmente leur valeur.\nPlus une carte est demandée, plus elle vaut cher.",
+    home_sign_in: 'Connexion →', home_browse: 'Voir les cartes',
     home_hot: 'Hot', home_recent: 'Achats récents', home_friends: 'Vos amis',
     home_friends_login_title: 'Connecte-toi pour voir tes amis',
     home_friends_login_sub: 'Tes abonnements Bluesky apparaîtront ici sous forme de cartes.',

@@ -15,7 +15,7 @@ const BASE_VALUE        = 1500
 const MIN_VALUE         = 600   // cards never go below this
 const STARTING_BALANCE  = 25000
 const INCOME_RATE       = 0.05   // 5% of card value per hour
-const DEPRECIATION_RATE = 0.02   // 2% per hour for unclaimed cards
+const OWNED_DEPRECIATION_RATE = 0.005 // 0.5% per hour for owned cards
 const APPRECIATE_FACTOR = 1.2    // +20% on steal
 
 const TRENDING_HANDLES = [
@@ -72,33 +72,17 @@ async function runHourly() {
   console.log('[cron] hourly run starting...')
   const ownerships = getOwnerships()
 
-  // 1. Credit 5%/h to each card owner
+  // Depreciate owned card values by 0.5%/h, then credit yield based on new value
   for (const [subject_did, o] of Object.entries(ownerships)) {
-    const value  = getValue(subject_did)
-    if (value <= MIN_VALUE) {
-      console.log(`[cron] skip ${subject_did} (at min value ${value}J)`)
-      continue
+    const oldVal = getValue(subject_did)
+    const newVal = Math.max(MIN_VALUE, Math.round(oldVal * (1 - OWNED_DEPRECIATION_RATE)))
+    if (newVal !== oldVal) {
+      setValue(subject_did, newVal)
+      console.log(`[cron] depreciate owned ${subject_did}: ${oldVal}J → ${newVal}J`)
     }
-    const income = Math.max(1, Math.round(value * INCOME_RATE))
+    const income = Math.max(1, Math.round(newVal * INCOME_RATE))
     creditBalance(o.owner_did, o.owner_handle, income)
-    console.log(`[cron] +${income}J → ${o.owner_handle} (owns ${subject_did}, value=${value}J)`)
-  }
-
-  // 2. Depreciate unclaimed trending cards
-  try {
-    const params = TRENDING_HANDLES.map(h => `actors=${encodeURIComponent(h)}`).join('&')
-    const res = await fetch(`https://public.api.bsky.app/xrpc/app.bsky.actor.getProfiles?${params}`)
-    const data = await res.json()
-    for (const p of (data.profiles ?? [])) {
-      if (!ownerships[p.did]) {
-        const oldVal = getValue(p.did)
-        const newVal = Math.max(MIN_VALUE, Math.round(oldVal * (1 - DEPRECIATION_RATE)))
-        setValue(p.did, newVal)
-        console.log(`[cron] depreciate ${p.handle}: ${oldVal}J → ${newVal}J`)
-      }
-    }
-  } catch (e) {
-    console.error('[cron] depreciation fetch error:', e.message)
+    console.log(`[cron] +${income}J → ${o.owner_handle} (owns ${subject_did}, value=${newVal}J)`)
   }
 
   console.log('[cron] done')

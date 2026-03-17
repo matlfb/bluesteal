@@ -228,7 +228,7 @@ export default function ActivityPage() {
   const isLoading   = tab === 'friends' ? friendsLoading : loading
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto', padding: '2rem 2.5rem 4rem' }}>
+    <div className='activity-wrap'>
 
       {/* Header */}
       <div style={{ marginBottom: '2rem' }}>

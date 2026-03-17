@@ -1,4 +1,5 @@
 'use client'
+import Confetti from '@/components/Confetti'
 
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
@@ -19,7 +20,7 @@ interface Card {
   price: number
 }
 
-function Carousel({ cards, loading }: { cards: Card[]; loading: boolean }) {
+function Carousel({ cards, loading, onCardClick, userDid, ownedDids }: { cards: Card[]; loading: boolean; onCardClick?: (card: Card) => void; userDid?: string; ownedDids?: Set<string> }) {
   const ref = useRef<HTMLDivElement>(null)
   return (
     <div ref={ref} className="carousel-scroll">
@@ -29,7 +30,7 @@ function Carousel({ cards, loading }: { cards: Card[]; loading: boolean }) {
           ))
         : cards.map(card => (
             <Link key={card.did} href={`/profil/${card.handle}`} style={{ flexShrink: 0, width: 200, textDecoration: 'none', display: 'block' }}>
-              <ProfileCard handle={card.handle} displayName={card.displayName} avatar={card.avatar} followersCount={card.followersCount} price={card.price} owner={card.owner} />
+              <ProfileCard handle={card.handle} displayName={card.displayName} avatar={card.avatar} followersCount={card.followersCount} price={card.price} owner={card.owner} onPillClick={onCardClick && userDid && !ownedDids?.has(card.did) && userDid !== card.did ? () => onCardClick(card) : undefined} />
             </Link>
           ))
       }
@@ -45,14 +46,14 @@ function CardGrid({ cards, loading, onCardClick, userDid, isMobile }: {
   isMobile: boolean
 }) {
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 2.5rem' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
+    <div style={{ maxWidth: isMobile ? 'none' : 1100, margin: isMobile ? 0 : '0 auto', padding: isMobile ? 0 : '0 2.5rem', width: '100%' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(180px, 1fr))', gap: isMobile ? '0.75rem' : '1rem', alignItems: 'stretch' }}>
         {loading
           ? Array.from({ length: 10 }).map((_, i) => (
               <div key={i} style={{ aspectRatio: '4/5', background: '#0f1318', opacity: 0.5 }} />
             ))
           : cards.map(card => (
-              <Link key={card.did} href={`/profil/${card.handle}`} style={{ textDecoration: 'none', display: 'block' }}>
+              <Link key={card.did} href={`/profil/${card.handle}`} style={{ textDecoration: 'none', display: 'block', width: '100%', minWidth: 0 }}>
                 <ProfileCard handle={card.handle} displayName={card.displayName} avatar={card.avatar} followersCount={card.followersCount} price={card.price} owner={card.owner} onPillClick={onCardClick && userDid && userDid !== card.did ? () => onCardClick(card) : undefined} />
               </Link>
             ))
@@ -62,12 +63,11 @@ function CardGrid({ cards, loading, onCardClick, userDid, isMobile }: {
   )
 }
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+function SectionTitle({ children, isMobile, isTablet, compact }: { children: React.ReactNode; isMobile?: boolean; isTablet?: boolean; compact?: boolean }) {
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 2.5rem', marginBottom: '1.5rem' }}>
+    <div style={{ maxWidth: (isMobile && compact) ? 'none' : 1100, margin: (isMobile && compact) ? 0 : '0 auto', padding: isMobile ? (compact ? 0 : '20px 20px 12px') : isTablet ? (compact ? '0 2.5rem' : '24px 2.5rem 0') : '0 2.5rem', marginBottom: isMobile ? (compact ? '12px' : 0) : '1.5rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '2.4rem', fontWeight: 400, color: '#e8e6dc', flexShrink: 0 }}>{children}</h2>
-        <div style={{ flex: 1, height: 1, background: 'rgba(0,229,255,0.08)', maxWidth: 160 }} />
+        <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: isMobile ? '2rem' : '2.4rem', fontWeight: 400, color: '#e8e6dc', flexShrink: 0 }}>{children}</h2>
       </div>
     </div>
   )
@@ -103,13 +103,15 @@ export default function HomePage() {
   const [recentLoading, setRecentLoading] = useState(true)
   const [modalCard,     setModalCard]     = useState<Card | null>(null)
   const [stealing,      setStealing]      = useState(false)
+  const [showConfetti,  setShowConfetti]  = useState(false)
   const [friendCards,   setFriendCards]   = useState<Card[]>([])
   const [friendLoading, setFriendLoading] = useState(false)
   const [activeTab,     setActiveTab]     = useState(0)
   const [isMobile,      setIsMobile]      = useState(false)
+  const [isTablet,      setIsTablet]      = useState(false)
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 640)
+    const check = () => { setIsMobile(window.innerWidth < 640); setIsTablet(window.innerWidth >= 640 && window.innerWidth < 1024) }
     check()
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
@@ -164,16 +166,16 @@ export default function HomePage() {
       await agent.com.atproto.repo.createRecord({ repo: user.did, collection: 'blue.steal.card', record: { $type: 'blue.steal.card', subject: { did: modalCard.did, handle: modalCard.handle }, price: modalCard.price, purchasedAt: new Date().toISOString() } })
       deductJetons(modalCard.price)
       addOwned(modalCard.did)
-      await fetch('/api/own', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subject_did: modalCard.did, subject_handle: modalCard.handle, owner_did: user.did, owner_handle: user.handle, purchased_at: new Date().toISOString() }) })
+      fetch('/api/own', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subject_did: modalCard.did, subject_handle: modalCard.handle, owner_did: user.did, owner_handle: user.handle, purchased_at: new Date().toISOString() }) }).catch(() => {})
+      const updateOwner = (cards: Card[]) => cards.map(c => c.did === modalCard.did ? { ...c, owner: user.handle } : c)
+      setHotCards(updateOwner); setRecentCards(updateOwner); setFriendCards(updateOwner)
+      setShowConfetti(true)
+      setModalCard(null)
       if (shareOnBsky) {
         const from = modalCard.owner ? ` from @${modalCard.owner}` : ''
         const rt = new RichText({ text: `I just stole @${modalCard.handle}${from} via https://bluesteal.matlfb.com 🔥` })
-        await rt.detectFacets(agent)
-        agent.post({ text: rt.text, facets: rt.facets }).catch(() => {})
+        rt.detectFacets(agent).then(() => agent.post({ text: rt.text, facets: rt.facets })).catch(() => {})
       }
-      const updateOwner = (cards: Card[]) => cards.map(c => c.did === modalCard.did ? { ...c, owner: user.handle } : c)
-      setHotCards(updateOwner); setRecentCards(updateOwner); setFriendCards(updateOwner)
-      setModalCard(null)
     } catch (e) { console.error('Steal failed:', e) }
     finally { setStealing(false) }
   }
@@ -191,7 +193,7 @@ export default function HomePage() {
               {t('home_label')}
               <span style={{ display: 'block', width: 40, height: 1, background: '#00b4d8' }} />
             </div>
-            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '5.5rem', lineHeight: 1.05, fontWeight: 400, color: '#e8e6dc', marginBottom: '1.25rem', maxWidth: 700 }}>
+            <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '4rem', lineHeight: 1.1, fontWeight: 400, color: '#e8e6dc', marginBottom: '1.25rem' }}>
               {t('home_h1a')}<br /><em style={{ fontStyle: 'italic', color: '#00e5ff' }}>{t('home_h1b')}</em>
             </h1>
             <p style={{ fontFamily: 'var(--font-sans)', fontSize: '1.05rem', color: '#8a8878', maxWidth: 520, lineHeight: 1.8, fontWeight: 300, marginBottom: '2.5rem' }}>
@@ -199,10 +201,10 @@ export default function HomePage() {
             </p>
             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
               <Link href="/login" style={{ display: 'inline-flex', alignItems: 'center', padding: '0.75rem 1.75rem', background: '#00b4d8', color: '#0a0d11', fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 500, letterSpacing: '0.05em', textDecoration: 'none' }}>
-                Connexion Bluesky →
+                {t('home_sign_in')}
               </Link>
               <a href="#explorer" style={{ display: 'inline-flex', alignItems: 'center', padding: '0.75rem 1.75rem', border: '1px solid rgba(0,229,255,0.2)', color: '#8a8878', fontFamily: 'var(--font-mono)', fontSize: '13px', letterSpacing: '0.05em', textDecoration: 'none' }}>
-                Voir les cartes
+                {t('home_browse')}
               </a>
             </div>
           </div>
@@ -213,16 +215,16 @@ export default function HomePage() {
       )}
 
       {(recentCards.length > 0 || recentLoading) && (
-        <div style={{ padding: '3.5rem 0 0' }}>
-          <SectionTitle>Collectés récemment</SectionTitle>
-          <Carousel cards={recentCards} loading={recentLoading} />
+        <div style={{ padding: (isMobile || isTablet) ? 0 : '3.5rem 0 0' }}>
+          <SectionTitle isMobile={isMobile} isTablet={isTablet}>Collectés récemment</SectionTitle>
+          <Carousel cards={recentCards} loading={recentLoading} onCardClick={user ? setModalCard : undefined} userDid={user?.did} ownedDids={ownedDids} />
           <Divider />
         </div>
       )}
 
-      <div id="explorer" style={{ padding: '3.5rem 0 4rem' }}>
-        <SectionTitle>Explorer</SectionTitle>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 2.5rem' }}>
+      <div id="explorer" style={{ padding: isMobile ? '20px' : '3.5rem 0 4rem' }}>
+        <SectionTitle isMobile={isMobile} isTablet={isTablet} compact>Explorer</SectionTitle>
+        <div style={{ maxWidth: isMobile ? 'none' : 1100, margin: isMobile ? 0 : '0 auto', padding: isMobile ? 0 : '0 2.5rem' }}>
           <SegmentedControl tabs={tabLabels} active={activeTab} onChange={setActiveTab} />
         </div>
 
@@ -233,7 +235,7 @@ export default function HomePage() {
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: '#00b4d8' }} />
                 <p style={{ fontFamily: 'var(--font-serif)', fontSize: '1.3rem', color: '#e8e6dc', marginBottom: '0.5rem' }}>{t('home_friends_login_title')}</p>
                 <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t3)', lineHeight: 1.7, marginBottom: '1.25rem' }}>{t('home_friends_login_sub')}</p>
-                <Link href="/login" style={{ display: 'inline-flex', alignItems: 'center', padding: '0.6rem 1.25rem', background: '#00b4d8', color: '#0a0d11', fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 500, letterSpacing: '0.05em', textDecoration: 'none' }}>Connexion →</Link>
+                <Link href="/login" style={{ display: 'inline-flex', alignItems: 'center', padding: '0.6rem 1.25rem', background: '#00b4d8', color: '#0a0d11', fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 500, letterSpacing: '0.05em', textDecoration: 'none' }}>{t('home_friends_login_btn')}</Link>
               </div>
             </div>
           ) : friendCards.length === 0 && !friendLoading ? (
@@ -250,6 +252,7 @@ export default function HomePage() {
         )}
       </div>
 
+      <Confetti active={showConfetti} onDone={() => setShowConfetti(false)} />
       <StealModal
         open={!!modalCard}
         handle={modalCard?.handle ?? ''}

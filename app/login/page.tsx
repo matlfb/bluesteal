@@ -32,7 +32,7 @@ export default function LoginPage() {
           BLUESTEAL
           <span style={{ display: 'block', flex: 1, height: 1, background: '#00b4d8', maxWidth: 60 }} />
         </div>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '3rem', lineHeight: 1.05, color: '#e8e6dc', marginBottom: '0.5rem' }}>{t('sign_in_title')}</h1>
+        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem', lineHeight: 1.1, color: '#e8e6dc', marginBottom: '0.5rem' }}>{t('sign_in_title')}</h1>
         <p style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', color: '#8a8878', fontWeight: 300, marginBottom: '2.5rem', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
           {t('sign_in_subtitle')}
         </p>

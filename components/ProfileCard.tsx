@@ -28,10 +28,10 @@ export default function ProfileCard({ handle, displayName, avatar, followersCoun
   }, [owner])
 
   return (
-    <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} style={{ position: 'relative', background: 'var(--surface)', cursor: 'pointer', overflow: 'hidden', transition: 'background 0.2s', userSelect: 'none' }}>
+    <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} style={{ position: 'relative', background: 'var(--surface)', cursor: 'pointer', overflow: 'hidden', transition: 'background 0.2s', userSelect: 'none', width: '100%' }}>
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'var(--brand)', transform: hovered ? 'scaleX(1)' : 'scaleX(0)', transformOrigin: 'left', transition: 'transform 0.3s', zIndex: 3 }} />
       <div style={{ position: 'absolute', inset: 0, border: `1.5px solid ${hovered ? 'var(--brand)' : 'transparent'}`, transition: 'border-color 0.2s', pointerEvents: 'none', zIndex: 3 }} />
-      <div style={{ position: 'relative', aspectRatio: '4/5', overflow: 'hidden', background: 'var(--elevated)' }}>
+      <div style={{ position: 'relative', aspectRatio: '3/4', overflow: 'hidden', background: 'var(--elevated)' }}>
         {avatar ? (
           <img src={avatar} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s', transform: hovered ? 'scale(1.04)' : 'scale(1)' }} />
         ) : (
@@ -42,9 +42,7 @@ export default function ProfileCard({ handle, displayName, avatar, followersCoun
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '60px', background: 'linear-gradient(to top, var(--surface), transparent)' }} />
         <div
           onClick={onPillClick ? (e) => { e.preventDefault(); e.stopPropagation(); onPillClick(e) } : undefined}
-          style={{ position: 'absolute', top: '9px', right: '9px', background: 'rgba(14,14,12,0.78)', backdropFilter: 'blur(6px)', padding: '3px 9px', borderRadius: '999px', display: 'flex', alignItems: 'center', gap: '5px', border: onPillClick ? '1px solid rgba(0,229,255,0.35)' : '1px solid rgba(255,255,255,0.07)', zIndex: 4, cursor: onPillClick ? 'pointer' : 'default', transition: 'border-color 0.15s' }}
-          onMouseEnter={onPillClick ? e => { (e.currentTarget as HTMLElement).style.border = '1px solid rgba(0,229,255,0.65)' } : undefined}
-          onMouseLeave={onPillClick ? e => { (e.currentTarget as HTMLElement).style.border = '1px solid rgba(0,229,255,0.35)' } : undefined}
+          style={{ position: 'absolute', top: '9px', right: '9px', background: 'rgba(14,14,12,0.78)', backdropFilter: 'blur(6px)', padding: '3px 9px', borderRadius: '999px', display: 'flex', alignItems: 'center', gap: '5px', border: '1px solid rgba(255,255,255,0.07)', zIndex: 4, cursor: onPillClick ? 'pointer' : 'default', transition: 'border-color 0.15s' }}
         >
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t1)' }}>{fmtNum(price)} J</span>
           {priceChange !== 0 && (
@@ -55,7 +53,7 @@ export default function ProfileCard({ handle, displayName, avatar, followersCoun
           {t('pc_followers', { n: followersCount >= 1_000_000 ? `${(followersCount / 1_000_000).toFixed(1)}M` : followersCount >= 1_000 ? `${(followersCount / 1000).toFixed(0)}K` : String(followersCount) })}
         </div>
       </div>
-      <div style={{ padding: '10px 12px 12px' }}>
+      <div style={{ padding: '12px', height: '88px', overflow: 'hidden', boxSizing: 'border-box' }}>
         <div style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', fontWeight: 600, color: 'var(--t1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '2px' }}>{displayName}</div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '6px' }}>@{handle}</div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', visibility: owner ? 'visible' : 'hidden', display: 'flex', alignItems: 'center', gap: '5px' }}>
