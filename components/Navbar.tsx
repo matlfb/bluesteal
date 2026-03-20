@@ -55,7 +55,7 @@ function IconLeaderboard({ active }: { active: boolean }) {
 export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
-  const { user, loading: authLoading, signOut, jetons } = useAuth()
+  const { user, loading: authLoading, signOut, jetons, hasActivityAlert, clearActivityAlert } = useAuth()
   const { t, fmtNum } = useLang()
 
   if ((pathname === '/' || pathname === '/login') && !user && !authLoading) return null
@@ -144,10 +144,9 @@ export default function Navbar() {
   return (
     <>
       {/* Top bar */}
-      <nav style={{
+      <nav className="nav-top" style={{
         position: 'fixed', top: 0, width: '100%', zIndex: 200, height: '60px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 2.5rem',
         background: scrolled ? 'rgba(14,14,12,0.96)' : '#0a0d11',
         backdropFilter: scrolled ? 'blur(12px)' : 'none',
         borderBottom: `1px solid ${scrolled ? 'rgba(0,229,255,0.1)' : 'transparent'}`,
@@ -162,11 +161,18 @@ export default function Navbar() {
           {user && <div className="nav-desktop-links" style={{ alignItems: 'center', gap: '1.75rem' }}>
             {navLinks.map(({ href, label }) => {
               const active = pathname === href
+              const isActivity = href === '/activity'
+              const showBadge = isActivity && hasActivityAlert && !active
               return (
-                <Link key={href} href={href} style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.1em', textDecoration: 'none', color: active ? '#00e5ff' : '#8a8878', transition: 'color 0.2s' }}
-                  onMouseEnter={e => { if (!active) (e.target as HTMLElement).style.color = '#00e5ff' }}
-                  onMouseLeave={e => { if (!active) (e.target as HTMLElement).style.color = '#8a8878' }}
-                >{label}</Link>
+                <Link key={href} href={href}
+                  onClick={isActivity ? clearActivityAlert : undefined}
+                  style={{ position: 'relative', fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.1em', textDecoration: 'none', color: active ? '#00e5ff' : '#8a8878', transition: 'color 0.2s' }}
+                  onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.color = '#00e5ff' }}
+                  onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.color = '#8a8878' }}
+                >
+                  {label}
+                  {showBadge && <span style={{ position: 'absolute', top: -4, right: -8, width: 6, height: 6, borderRadius: '50%', background: '#e05252', display: 'block' }} />}
+                </Link>
               )
             })}
           </div>}
@@ -265,7 +271,7 @@ export default function Navbar() {
                       <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 600, color: '#e8e6dc', marginBottom: '2px' }}>{user.displayName || user.handle}</p>
                       <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t3)' }}>@{user.handle}</p>
                     </div>
-                    <Link href="/compte" onClick={() => setDropdownOpen(false)} style={{ display: 'block', padding: '0.65rem 1rem', fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#8a8878', textDecoration: 'none', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                    <Link href="/account" onClick={() => setDropdownOpen(false)} style={{ display: 'block', padding: '0.65rem 1rem', fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#8a8878', textDecoration: 'none', letterSpacing: '0.05em', borderBottom: '1px solid rgba(255,255,255,0.04)' }}
                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#00e5ff'; (e.currentTarget as HTMLElement).style.background = 'rgba(0,229,255,0.04)' }}
                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#8a8878'; (e.currentTarget as HTMLElement).style.background = 'transparent' }}>
                       {t('nav_my_account')}
@@ -297,8 +303,11 @@ export default function Navbar() {
         {user && <button className="nav-bottom-item" onClick={openSearch}>
           <IconSearch active={searchOpen} />
         </button>}
-        {user && <Link href="/activity" className="nav-bottom-item">
+        {user && <Link href="/activity" className="nav-bottom-item" onClick={clearActivityAlert} style={{ position: 'relative' }}>
           <IconActivity active={pathname === '/activity'} />
+          {hasActivityAlert && pathname !== '/activity' && (
+            <span style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: '50%', background: '#e05252', display: 'block' }} />
+          )}
         </Link>}
         {user && <Link href="/leaderboard" className="nav-bottom-item">
           <IconLeaderboard active={pathname === '/leaderboard'} />

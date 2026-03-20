@@ -7,60 +7,112 @@ import { fileURLToPath } from 'url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const OWNERSHIPS_FILE  = path.join(__dirname, 'data', 'ownerships.json')
+const OWNERSHIPS_LOCK  = OWNERSHIPS_FILE + '.lock'
 const BALANCES_FILE    = path.join(__dirname, 'data', 'balances.json')
+const BALANCES_LOCK    = BALANCES_FILE + '.lock'
 const CARD_VALUES_FILE = path.join(__dirname, 'data', 'card_values.json')
 const JETSTREAM = 'wss://jetstream2.us-east.bsky.network/subscribe?wantedCollections=blue.steal.card'
 
-const BASE_VALUE        = 1500
-const MIN_VALUE         = 600   // cards never go below this
-const STARTING_BALANCE  = 25000
-const INCOME_RATE       = 0.05   // 5% of card value per hour
-const OWNED_DEPRECIATION_RATE = 0.005 // 0.5% per hour for owned cards
-const APPRECIATE_FACTOR = 1.2    // +20% on steal
+const BASE_VALUE              = 1500
+const MIN_VALUE               = 600
+const STARTING_BALANCE        = 25000
+const INCOME_RATE             = 0.03
+const OWNED_DEPRECIATION_RATE = 0.005
+const APPRECIATE_FACTOR       = 1.2
 
-const TRENDING_HANDLES = [
-  'pfrazee.com', 'jay.bsky.team', 'why.bsky.social', 'atproto.com',
-  'bnewbold.net', 'dholms.bsky.social', 'haileysum.bsky.social',
-  'annh.bsky.social', 'matlfb.com', 'samad.bsky.social',
-]
+// ── File lock helpers ────────────────────────────────────────────────────────
+
+function acquireLock(lockFile, timeout = 5000) {
+  const start = Date.now()
+  while (true) {
+    try {
+      const fd = fs.openSync(lockFile, 'wx')
+      return fd
+    } catch {
+      if (Date.now() - start > timeout) throw new Error(`lock timeout: ${lockFile}`)
+      const until = Date.now() + 5
+      while (Date.now() < until) {}
+    }
+  }
+}
+
+function releaseLock(fd, lockFile) {
+  try { fs.closeSync(fd) } catch {}
+  try { fs.unlinkSync(lockFile) } catch {}
+}
 
 // ── Storage helpers ──────────────────────────────────────────────────────────
 
 function readJSON(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf-8')) } catch { return {} }
 }
-function writeJSON(file, data) {
+
+function writeAtomic(file, data) {
   fs.mkdirSync(path.dirname(file), { recursive: true })
-  fs.writeFileSync(file, JSON.stringify(data, null, 2))
+  const tmp = file + '.tmp'
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2))
+  fs.renameSync(tmp, file)
 }
 
 function getOwnerships() { return readJSON(OWNERSHIPS_FILE) }
+
 function setOwnership({ subject_did, owner_did, owner_handle, purchased_at }) {
-  const s = readJSON(OWNERSHIPS_FILE)
-  s[subject_did] = { subject_did, owner_did, owner_handle, purchased_at }
-  writeJSON(OWNERSHIPS_FILE, s)
-  console.log(`[own] ${owner_handle} → ${subject_did}`)
+  const fd = acquireLock(OWNERSHIPS_LOCK)
+  try {
+    const s = readJSON(OWNERSHIPS_FILE)
+    s[subject_did] = { subject_did, owner_did, owner_handle, purchased_at }
+    writeAtomic(OWNERSHIPS_FILE, s)
+    console.log(`[own] ${owner_handle} → ${subject_did}`)
+  } finally {
+    releaseLock(fd, OWNERSHIPS_LOCK)
+  }
 }
 
 function getValue(did) { return readJSON(CARD_VALUES_FILE)[did] ?? BASE_VALUE }
+
 function setValue(did, val) {
   const s = readJSON(CARD_VALUES_FILE)
   s[did] = Math.max(100, Math.round(val))
-  writeJSON(CARD_VALUES_FILE, s)
+  writeAtomic(CARD_VALUES_FILE, s)
 }
 
 function getBalance(did) { return readJSON(BALANCES_FILE)[did]?.balance ?? STARTING_BALANCE }
+
 function creditBalance(did, handle, amount) {
-  const s = readJSON(BALANCES_FILE)
-  s[did] = { handle, balance: (s[did]?.balance ?? STARTING_BALANCE) + amount }
-  writeJSON(BALANCES_FILE, s)
+  const fd = acquireLock(BALANCES_LOCK)
+  try {
+    const s = readJSON(BALANCES_FILE)
+    s[did] = { handle, balance: (s[did]?.balance ?? STARTING_BALANCE) + amount }
+    writeAtomic(BALANCES_FILE, s)
+  } finally {
+    releaseLock(fd, BALANCES_LOCK)
+  }
+}
+
+function debitBalance(did, handle, amount) {
+  const fd = acquireLock(BALANCES_LOCK)
+  try {
+    const s = readJSON(BALANCES_FILE)
+    const current = s[did]?.balance ?? STARTING_BALANCE
+    if (current < amount) return false
+    s[did] = { handle, balance: current - amount }
+    writeAtomic(BALANCES_FILE, s)
+    return true
+  } finally {
+    releaseLock(fd, BALANCES_LOCK)
+  }
 }
 
 // ── Resolve DID → handle ─────────────────────────────────────────────────────
 
+const DID_RE = /^did:[a-z]+:[a-zA-Z0-9._:%-]+$/
+
 async function resolveHandle(did) {
   try {
-    const res = await fetch(`https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(did)}`)
+    const res = await fetch(
+      `https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(did)}`,
+      { signal: AbortSignal.timeout(5000) }
+    )
     const data = await res.json()
     return data.handle ?? did
   } catch { return did }
@@ -72,7 +124,6 @@ async function runHourly() {
   console.log('[cron] hourly run starting...')
   const ownerships = getOwnerships()
 
-  // Depreciate owned card values by 0.5%/h, then credit yield based on new value
   for (const [subject_did, o] of Object.entries(ownerships)) {
     const oldVal = getValue(subject_did)
     const newVal = Math.max(MIN_VALUE, Math.round(oldVal * (1 - OWNED_DEPRECIATION_RATE)))
@@ -80,7 +131,8 @@ async function runHourly() {
       setValue(subject_did, newVal)
       console.log(`[cron] depreciate owned ${subject_did}: ${oldVal}J → ${newVal}J`)
     }
-    const income = Math.max(1, Math.round(newVal * INCOME_RATE))
+    if (newVal <= MIN_VALUE) continue
+    const income = Math.round(newVal * INCOME_RATE)
     creditBalance(o.owner_did, o.owner_handle, income)
     console.log(`[cron] +${income}J → ${o.owner_handle} (owns ${subject_did}, value=${newVal}J)`)
   }
@@ -104,15 +156,33 @@ function connect() {
       const record = event.commit.record
       if (!record?.subject?.did) return
 
-      resolveHandle(event.did).then(owner_handle => {
-        setOwnership({
-          subject_did:  record.subject.did,
-          owner_did:    event.did,
-          owner_handle,
-          purchased_at: record.purchasedAt ?? new Date().toISOString(),
-        })
+      // Validate DIDs from external source
+      const owner_did   = event.did
+      const subject_did = record.subject.did
+      if (!DID_RE.test(owner_did) || !DID_RE.test(subject_did)) return
+
+      // Prevent self-ownership
+      if (owner_did === subject_did) return
+
+      resolveHandle(owner_did).then(owner_handle => {
+        const price = getValue(subject_did)
+
+        // Check and deduct balance — reject event if insufficient funds
+        const ok = debitBalance(owner_did, owner_handle, price)
+        if (!ok) {
+          console.log(`[firehose] rejected: ${owner_handle} has insufficient balance for ${subject_did} (price=${price})`)
+          return
+        }
+
+        // Appreciate card value on steal
+        const newValue = Math.round(getValue(subject_did) * APPRECIATE_FACTOR)
+        setValue(subject_did, newValue)
+
+        // Always use server time — never trust purchasedAt from the external record
+        const now = new Date().toISOString()
+        setOwnership({ subject_did, owner_did, owner_handle, purchased_at: now })
       })
-    } catch { /* ignore */ }
+    } catch { /* ignore malformed events */ }
   })
 
   ws.on('close', () => {

@@ -31,9 +31,9 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { subject_did, subject_handle, owner_handle, purchased_at } = body
+  const { subject_did, subject_handle } = body
 
-  if (!subject_did || !owner_handle) {
+  if (!subject_did) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   }
 
@@ -42,6 +42,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Cannot buy your own card' }, { status: 400 })
   }
 
+  // 4. Resolve owner_handle server-side — never trust client-provided handle
+  let owner_handle: string = owner_did
+  try {
+    const res = await fetch(
+      `https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(owner_did)}`,
+      { signal: AbortSignal.timeout(5000) }
+    )
+    if (res.ok) {
+      const data = await res.json()
+      if (data.handle) owner_handle = data.handle
+    }
+  } catch { /* fallback to DID */ }
+
   const price = getValue(subject_did)
   const ok = debitBalance(owner_did, owner_handle, price)
   if (!ok) {
@@ -49,6 +62,7 @@ export async function POST(req: NextRequest) {
   }
 
   const prevOwner = getOwner(subject_did)
+  // 5. Always use server time — never trust client-provided purchased_at
   const now = new Date().toISOString()
 
   if (prevOwner && prevOwner.owner_did !== owner_did) {
@@ -64,7 +78,7 @@ export async function POST(req: NextRequest) {
   }
 
   const newValue = appreciateValue(subject_did)
-  setOwner({ subject_did, owner_did, owner_handle, purchased_at: purchased_at ?? now })
+  setOwner({ subject_did, owner_did, owner_handle, purchased_at: now })
 
   addEvent({
     type: 'bought',

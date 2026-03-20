@@ -5,14 +5,14 @@ import { rateLimit } from '@/lib/rate-limit'
 export const runtime = 'nodejs'
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get('x-forwarded-for') ?? 'unknown'
-  if (!rateLimit(`session:${ip}`, 10, 60_000)) {
-    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
-  }
-
   const { did, handle } = await req.json()
   if (!did || typeof did !== 'string' || !did.startsWith('did:')) {
     return NextResponse.json({ error: 'Invalid DID' }, { status: 400 })
+  }
+
+  // Rate limit by DID — not by IP, which is spoofable via X-Forwarded-For
+  if (!rateLimit(`session:${did}`, 10, 60_000)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
   // Verify handle resolves to this DID (unless handle is the DID itself as fallback)
