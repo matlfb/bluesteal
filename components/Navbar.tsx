@@ -55,7 +55,7 @@ function IconLeaderboard({ active }: { active: boolean }) {
 export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
-  const { user, loading: authLoading, signOut, jetons, hasActivityAlert, clearActivityAlert } = useAuth()
+  const { user, loading: authLoading, signOut, jetons, balanceLoading, hasActivityAlert, clearActivityAlert } = useAuth()
   const { t, fmtNum } = useLang()
 
   if ((pathname === '/' || pathname === '/login') && !user && !authLoading) return null
@@ -251,7 +251,10 @@ export default function Navbar() {
               onMouseLeave={e => { if (pathname !== '/jetons') { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.15)'; (e.currentTarget as HTMLElement).style.background = 'none' } }}
             >
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#38bdf8', display: 'inline-block', animation: 'pulse 2s infinite', flexShrink: 0 }} />
-              <span style={{ color: '#e8e6dc', letterSpacing: '0.05em' }}>{fmtNum(jetons)} <span style={{ color: 'var(--t3)' }}>J</span></span>
+              {balanceLoading
+                ? <span style={{ width: 52, height: 12, borderRadius: 3, background: 'rgba(255,255,255,0.08)', display: 'inline-block', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                : <span style={{ color: '#e8e6dc', letterSpacing: '0.05em' }}>{fmtNum(jetons)} <span style={{ color: 'var(--t3)' }}>J</span></span>
+              }
             </Link>
           )}
 

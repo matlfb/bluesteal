@@ -15,6 +15,7 @@ interface AuthContextType {
   session: OAuthSession | null
   loading: boolean
   jetons: number
+  balanceLoading: boolean
   ownedDids: Set<string>
   hasActivityAlert: boolean
   addOwned: (did: string) => void
@@ -30,6 +31,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
   jetons: 25000,
+  balanceLoading: true,
   ownedDids: new Set(),
   hasActivityAlert: false,
   addOwned: () => {},
@@ -51,12 +53,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<OAuthSession | null>(null)
   const [loading, setLoading] = useState(true)
   const [jetons, setJetons] = useState(25000)
+  const [balanceLoading, setBalanceLoading] = useState(true)
   const [ownedDids, setOwnedDids] = useState<Set<string>>(new Set())
   const [hasActivityAlert, setHasActivityAlert] = useState(false)
   const notifGrantedRef = useRef(false)
   const userDidRef = useRef<string | null>(null)
 
   function syncBalance(did: string) {
+    setBalanceLoading(true)
     fetch(`/api/balance?did=${encodeURIComponent(did)}`)
       .then(r => r.json())
       .then(data => {
@@ -65,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch(() => {})
+      .finally(() => setBalanceLoading(false))
   }
 
   function deductJetons(amount: number) {
@@ -223,7 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, jetons, ownedDids, hasActivityAlert, addOwned, deductJetons, addJetons, clearActivityAlert, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, jetons, balanceLoading, ownedDids, hasActivityAlert, addOwned, deductJetons, addJetons, clearActivityAlert, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   )
