@@ -9,11 +9,12 @@ export async function isBlacklisted(did: string): Promise<boolean> {
 }
 
 export async function filterBlacklisted<T extends { did?: string; subject_did?: string; buyer_did?: string }>(items: T[]): Promise<T[]> {
-  const [manual, auto] = await Promise.all([
+  const [manual, auto, optedOut] = await Promise.all([
     redis.smembers('blacklist:manual'),
     redis.smembers('blacklist:auto'),
+    redis.smembers('blacklist:opted-out'),
   ])
-  const set = new Set([...manual, ...auto])
+  const set = new Set([...manual, ...auto, ...optedOut])
   return items.filter(i => {
     const dids = [i.did, i.subject_did, i.buyer_did].filter(Boolean) as string[]
     return !dids.some(d => set.has(d))
@@ -28,15 +29,17 @@ export async function removeFromBlacklist(did: string): Promise<void> {
   await redis.srem('blacklist:manual', did)
 }
 
-export async function getBlacklist(): Promise<{ manual: string[]; auto: string[] }> {
-  const [manual, auto] = await Promise.all([
+export async function getBlacklist(): Promise<{ manual: string[]; auto: string[]; optedOut: string[] }> {
+  const [manual, auto, optedOut] = await Promise.all([
     redis.smembers('blacklist:manual'),
     redis.smembers('blacklist:auto'),
+    redis.smembers('blacklist:opted-out'),
   ])
-  return { manual, auto }
+  return { manual, auto, optedOut }
 }
 
-export async function syncFromClearsky(handle = 'bluesteal.app'): Promise<{ added: number; removed: number }> {
+export async function syncFromClearsky(handle = 'bluesteal.app'): Promise<{ added: number; removed: number; optedOut: number }> {
+  // Sync outgoing blocks (bluesteal.app blocked them) → blacklist:auto
   const countRes = await fetch(
     `https://public.api.clearsky.services/api/v1/anon/single-blocklist/total/${handle}`,
     { signal: AbortSignal.timeout(10_000) }
@@ -62,16 +65,36 @@ export async function syncFromClearsky(handle = 'bluesteal.app'): Promise<{ adde
     }
   }
 
-  const prevAuto = await redis.smembers('blacklist:auto')
-  const prevSet = new Set(prevAuto)
+  // Sync incoming blocks (they blocked bluesteal.app = opt-out) → blacklist:opted-out
+  const incomingRes = await fetch(
+    `https://public.api.clearsky.services/api/v1/anon/blocklist/${handle}`,
+    { signal: AbortSignal.timeout(10_000) }
+  )
+  const newOptedOutSet = new Set<string>()
+  if (incomingRes.ok) {
+    const incomingData = await incomingRes.json()
+    for (const item of (incomingData.data?.blocklist ?? [])) {
+      if (item.did) newOptedOutSet.add(item.did)
+    }
+  }
+
+  const [prevAuto, prevOptedOut] = await Promise.all([
+    redis.smembers('blacklist:auto'),
+    redis.smembers('blacklist:opted-out'),
+  ])
+  const prevAutoSet = new Set(prevAuto)
   const newAuto = [...newAutoSet]
-  const added = newAuto.filter(d => !prevSet.has(d)).length
+  const newOptedOut = [...newOptedOutSet]
+  const added = newAuto.filter(d => !prevAutoSet.has(d)).length
   const removed = prevAuto.filter(d => !newAutoSet.has(d)).length
+  const optedOut = newOptedOut.filter(d => !new Set(prevOptedOut).has(d)).length
 
   const pipe = redis.pipeline()
   pipe.del('blacklist:auto')
   if (newAuto.length) { for (const d of newAuto) pipe.sadd('blacklist:auto', d) }
+  pipe.del('blacklist:opted-out')
+  if (newOptedOut.length) { for (const d of newOptedOut) pipe.sadd('blacklist:opted-out', d) }
   await pipe.exec()
 
-  return { added, removed }
+  return { added, removed, optedOut }
 }
