@@ -84,7 +84,7 @@ async function setOwnership(o) {
   const prevOwner = prev ? (typeof prev === 'string' ? JSON.parse(prev) : prev) : null
 
   // Skip if already owned by same owner (dedup duplicate firehose events)
-  if (prevOwner && prevOwner.owner_did === o.owner_did) return
+  if (prevOwner && prevOwner.owner_did === o.owner_did) return null
 
   const cmds = [
     ['set', `ownership:${o.subject_did}`, json],
@@ -102,6 +102,7 @@ async function setOwnership(o) {
     headers: { Authorization: `Bearer ${REDIS_TOKEN}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(cmds),
   })
+  return prevOwner
 }
 
 async function getAllOwnerships() {
@@ -175,7 +176,17 @@ function connect() {
         const newValue = Math.round((await getValue(subject_did)) * 1.2)
         await setValue(subject_did, newValue)
         const now = new Date().toISOString()
-        await setOwnership({ subject_did, owner_did, owner_handle, purchased_at: now })
+        const prevOwnership = await setOwnership({ subject_did, owner_did, owner_handle, purchased_at: now })
+        if (prevOwnership !== null) {
+          // Add to global activity feed
+          const activity = JSON.stringify({ buyer_did: owner_did, buyer_handle: owner_handle, subject_did, subject_handle: record.subject.handle ?? subject_did, prev_owner_handle: prevOwnership?.owner_handle, price, at: now })
+          await redisPipeline([
+            ['lpush', 'activity:global', activity],
+            ['ltrim', 'activity:global', '0', '499'],
+            ['lpush', `card_history:${subject_did}`, JSON.stringify({ type: 'bought', actor_did: owner_did, subject_did, subject_handle: record.subject.handle ?? subject_did, price, at: now, counterpart_handle: prevOwnership?.owner_handle })],
+            ['ltrim', `card_history:${subject_did}`, '0', '199'],
+          ])
+        }
         console.log(`[firehose] ${owner_handle} acquired ${subject_did} for ${price}J`)
       }).catch(console.error)
     } catch {}
