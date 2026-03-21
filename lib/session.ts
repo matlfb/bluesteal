@@ -9,7 +9,7 @@ export function signSession(did: string): string {
   const exp = Date.now() + SESSION_TTL_MS
   const payload = Buffer.from(JSON.stringify({ did, exp })).toString('base64url')
   const sig = createHmac('sha256', SECRET).update(payload).digest('base64url')
-  return 
+  return `${payload}.${sig}`
 }
 
 export function verifySession(token: string): string | null {
