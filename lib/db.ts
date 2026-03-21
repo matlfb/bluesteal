@@ -3,7 +3,6 @@ import { redis } from './redis'
 export interface Ownership {
   subject_did: string
   owner_did: string
-  owner_handle: string
   purchased_at: string
 }
 

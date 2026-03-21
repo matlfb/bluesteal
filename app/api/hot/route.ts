@@ -15,26 +15,33 @@ export async function GET(req: NextRequest) {
   const cards12 = top.slice(0, 12)
   if (!cards12.length) return NextResponse.json({ cards: [] })
 
+  // Fetch owners in parallel, then batch-resolve all profiles (cards + owners)
+  const owners = await Promise.all(cards12.map(c => getOwner(c.did)))
+  const allDids = [...new Set([
+    ...cards12.map(c => c.did),
+    ...owners.filter(Boolean).map(o => o!.owner_did),
+  ])]
+
   const profileMap: Record<string, any> = {}
-  for (let i = 0; i < cards12.length; i += 25) {
-    const batch = cards12.slice(i, i + 25)
+  for (let i = 0; i < allDids.length; i += 25) {
+    const batch = allDids.slice(i, i + 25)
     try {
-      const params = batch.map(c => `actors=${encodeURIComponent(c.did)}`).join('&')
+      const params = batch.map(d => `actors=${encodeURIComponent(d)}`).join('&')
       const r = await fetch(`https://public.api.bsky.app/xrpc/app.bsky.actor.getProfiles?${params}`)
       for (const p of ((await r.json()).profiles ?? [])) profileMap[p.did] = p
     } catch {}
   }
 
-  const cards = await Promise.all(cards12.map(async ({ did, value }) => {
+  const cards = cards12.map(({ did, value }, i) => {
     const p = profileMap[did]
-    const owner = await getOwner(did)
+    const owner = owners[i]
     return {
       did, handle: p?.handle ?? did, displayName: p?.displayName ?? did,
       avatar: p?.avatar ?? null, followersCount: p?.followersCount ?? 0,
-      owner_handle: owner?.owner_handle ?? null,
+      owner_handle: owner ? (profileMap[owner.owner_did]?.handle ?? owner.owner_did) : null,
       verified: p?.verification?.verifiedStatus === 'valid', value,
     }
-  }))
+  })
 
   return NextResponse.json({ cards: cards.filter(c => c.handle !== c.did) })
 }

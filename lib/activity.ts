@@ -20,7 +20,10 @@ function parse(item: unknown): LedgerEvent {
 }
 
 export async function addActivity(event: LedgerEvent): Promise<void> {
-  await redis.lpush('activity:global', JSON.stringify(event))
+  const pipe = redis.pipeline()
+  pipe.lpush('activity:global', JSON.stringify(event))
+  pipe.hincrby('steals:all', event.buyer_did, 1)
+  await pipe.exec()
 }
 
 export async function getGlobalActivity(limit = 50): Promise<LedgerEvent[]> {

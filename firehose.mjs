@@ -45,20 +45,20 @@ async function getBalance(did) {
   return (typeof val === 'string' ? JSON.parse(val) : val).balance ?? STARTING_BALANCE
 }
 
-async function setBalance(did, handle, balance) {
-  await redis('set', `balance:${did}`, JSON.stringify({ handle, balance }))
+async function setBalance(did, balance) {
+  await redis('set', `balance:${did}`, JSON.stringify({ balance }))
 }
 
-async function debitBalance(did, handle, amount) {
+async function debitBalance(did, amount) {
   const current = await getBalance(did)
   if (current < amount) return false
-  await setBalance(did, handle, current - amount)
+  await setBalance(did, current - amount)
   return true
 }
 
-async function creditBalance(did, handle, amount) {
+async function creditBalance(did, amount) {
   const current = await getBalance(did)
-  await setBalance(did, handle, current + amount)
+  await setBalance(did, current + amount)
 }
 
 async function getValue(did) {
@@ -79,7 +79,8 @@ async function setValue(did, value) {
 }
 
 async function setOwnership(o) {
-  const json = JSON.stringify(o)
+  const record = { subject_did: o.subject_did, owner_did: o.owner_did, purchased_at: o.purchased_at }
+  const json = JSON.stringify(record)
   const prev = await redis('get', `ownership:${o.subject_did}`)
   const prevOwner = prev ? (typeof prev === 'string' ? JSON.parse(prev) : prev) : null
 
@@ -138,8 +139,8 @@ async function runHourly() {
     }
     if (newVal <= MIN_VALUE) continue
     const income = Math.round(newVal * INCOME_RATE)
-    await creditBalance(o.owner_did, o.owner_handle, income)
-    console.log(`[cron] +${income}J → ${o.owner_handle}`)
+    await creditBalance(o.owner_did, income)
+    console.log(`[cron] +${income}J → ${o.owner_did}`)
   }
 
   console.log('[cron] done')

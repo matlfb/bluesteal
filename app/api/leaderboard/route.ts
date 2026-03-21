@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllOwnerships } from '@/lib/db'
 import { getAllCardValues } from '@/lib/card-values'
-import { getAllSteals } from '@/lib/history'
 import { filterBlacklisted } from '@/lib/blacklist'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
+import { redis } from '@/lib/redis'
 
 export const runtime = 'nodejs'
 export const revalidate = 0
@@ -11,20 +11,24 @@ export const revalidate = 0
 export async function GET(req: NextRequest) {
   if (!await rateLimit(`pub:${getClientIP(req)}`, 120, 60_000))
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
-  const [ownerships, cardValues, steals] = await Promise.all([
-    getAllOwnerships(), getAllCardValues(), getAllSteals(),
+  const [ownerships, cardValues, stealsHash] = await Promise.all([
+    getAllOwnerships(), getAllCardValues(),
+    redis.hgetall('steals:all').then(h => {
+      if (!h) return {} as Record<string, number>
+      return Object.fromEntries(Object.entries(h).map(([k, v]) => [k, Number(v)]))
+    }),
   ])
 
-  const byOwner: Record<string, { owner_handle: string; subject_dids: string[] }> = {}
+  const byOwner: Record<string, { subject_dids: string[] }> = {}
   for (const o of Object.values(ownerships)) {
-    if (!byOwner[o.owner_did]) byOwner[o.owner_did] = { owner_handle: o.owner_handle, subject_dids: [] }
+    if (!byOwner[o.owner_did]) byOwner[o.owner_did] = { subject_dids: [] }
     byOwner[o.owner_did].subject_dids.push(o.subject_did)
   }
 
-  const ownerStats = Object.entries(byOwner).map(([did, { owner_handle, subject_dids }]) => ({
-    did, owner_handle, cards: subject_dids.length,
+  const ownerStats = Object.entries(byOwner).map(([did, { subject_dids }]) => ({
+    did, cards: subject_dids.length,
     portfolio: subject_dids.reduce((sum, d) => sum + (cardValues[d] ?? 600), 0),
-    steals: steals[did] ?? 0,
+    steals: stealsHash[did] ?? 0,
   }))
 
   ownerStats.sort((a, b) => b.portfolio - a.portfolio)
@@ -45,8 +49,8 @@ export async function GET(req: NextRequest) {
     const p = profileMap[o.did]
     return {
       rank: i + 1, did: o.did,
-      handle: p?.handle ?? o.owner_handle,
-      displayName: p?.displayName || p?.handle || o.owner_handle,
+      handle: p?.handle ?? o.did,
+      displayName: p?.displayName || p?.handle || o.did,
       avatar: p?.avatar ?? null,
       cards: o.cards, portfolio: o.portfolio, steals: o.steals,
     }

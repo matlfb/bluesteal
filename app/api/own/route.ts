@@ -32,31 +32,18 @@ export async function POST(req: NextRequest) {
   if (!DID_RE.test(subject_did)) return NextResponse.json({ error: 'Invalid subject' }, { status: 400 })
   if (subject_did === owner_did) return NextResponse.json({ error: 'Cannot buy your own card' }, { status: 400 })
 
-  let owner_handle: string = owner_did
-  try {
-    const res = await fetch(
-      `https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(owner_did)}`,
-      { signal: AbortSignal.timeout(5000) }
-    )
-    if (res.ok) {
-      const data = await res.json()
-      if (data.handle) owner_handle = data.handle
-    }
-  } catch {}
-
-  const price = await getValue(subject_did)
+  const [price, prevOwner] = await Promise.all([getValue(subject_did), getOwner(subject_did)])
   if (price < 1) return NextResponse.json({ error: 'Invalid card value' }, { status: 500 })
-  const ok = await debitBalance(owner_did, owner_handle, price)
+  const ok = await debitBalance(owner_did, price)
   if (!ok) {
     return NextResponse.json({ error: 'Insufficient balance', balance: await getBalance(owner_did) }, { status: 402 })
   }
 
-  const prevOwner = await getOwner(subject_did)
   const now = new Date().toISOString()
 
   const [newValue] = await Promise.all([
     appreciateValue(subject_did),
-    setOwner({ subject_did, owner_did, owner_handle, purchased_at: now }),
+    setOwner({ subject_did, owner_did, purchased_at: now }),
     addActivity({
       buyer_did: owner_did,
       subject_did,
