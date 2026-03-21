@@ -56,7 +56,12 @@ export async function POST(req: NextRequest) {
       .sort((a, b) => b.at.localeCompare(a.at))
 
     const key = `${o.owner_did}:${o.subject_did}`
-    const alreadyInLedger = ledger.some(e => e.buyer_did === o.owner_did && e.subject_did === o.subject_did)
+    // Check if this specific purchase (matching timestamp) is already in the ledger
+    const alreadyInLedger = ledger.some(e =>
+      e.buyer_did === o.owner_did &&
+      e.subject_did === o.subject_did &&
+      e.at === o.purchased_at
+    )
 
     if (alreadyInLedger) continue
 
