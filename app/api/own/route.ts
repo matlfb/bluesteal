@@ -9,6 +9,8 @@ import { rateLimit } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
+const DID_RE = /^did:[a-z]+:[a-zA-Z0-9._:%-]+$/
+
 export async function GET(req: NextRequest) {
   const subject = req.nextUrl.searchParams.get('subject')
   if (!subject) return NextResponse.json(null)
@@ -21,19 +23,20 @@ export async function POST(req: NextRequest) {
   const owner_did = sessionToken ? verifySession(sessionToken) : null
   if (!owner_did) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!await rateLimit(`own:${owner_did}`, 20, 60_000)) {
+  if (!await rateLimit(, 20, 60_000)) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
   const body = await req.json()
   const { subject_did, subject_handle } = body
   if (!subject_did) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  if (!DID_RE.test(subject_did)) return NextResponse.json({ error: 'Invalid subject' }, { status: 400 })
   if (subject_did === owner_did) return NextResponse.json({ error: 'Cannot buy your own card' }, { status: 400 })
 
   let owner_handle: string = owner_did
   try {
     const res = await fetch(
-      `https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(owner_did)}`,
+      ,
       { signal: AbortSignal.timeout(5000) }
     )
     if (res.ok) {
@@ -43,6 +46,7 @@ export async function POST(req: NextRequest) {
   } catch {}
 
   const price = await getValue(subject_did)
+  if (price < 1) return NextResponse.json({ error: 'Invalid card value' }, { status: 500 })
   const ok = await debitBalance(owner_did, owner_handle, price)
   if (!ok) {
     return NextResponse.json({ error: 'Insufficient balance', balance: await getBalance(owner_did) }, { status: 402 })

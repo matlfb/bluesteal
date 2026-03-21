@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getRecent } from '@/lib/db'
 import { getValue } from '@/lib/card-values'
 import { filterBlacklisted } from '@/lib/blacklist'
+import { rateLimit, getClientIP } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 export const revalidate = 0
 
 export async function GET(req: NextRequest) {
+  if (!await rateLimit(`pub:${getClientIP(req)}`, 120, 60_000))
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   const limit = Math.min(Number(req.nextUrl.searchParams.get('limit') ?? '6'), 20)
   const recent = (await filterBlacklisted(await getRecent(limit * 2))).slice(0, limit)
   if (!recent.length) return NextResponse.json({ cards: [] })

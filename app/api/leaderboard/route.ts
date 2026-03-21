@@ -1,13 +1,16 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getAllOwnerships } from '@/lib/db'
 import { getAllCardValues } from '@/lib/card-values'
 import { getAllSteals } from '@/lib/history'
 import { filterBlacklisted } from '@/lib/blacklist'
+import { rateLimit, getClientIP } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 export const revalidate = 0
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!await rateLimit(`pub:${getClientIP(req)}`, 120, 60_000))
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   const [ownerships, cardValues, steals] = await Promise.all([
     getAllOwnerships(), getAllCardValues(), getAllSteals(),
   ])

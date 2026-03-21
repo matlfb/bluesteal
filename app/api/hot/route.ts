@@ -1,11 +1,14 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getTopCardsByValue } from '@/lib/card-values'
 import { getOwner } from '@/lib/db'
 import { filterBlacklisted } from '@/lib/blacklist'
+import { rateLimit, getClientIP } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!await rateLimit(`pub:${getClientIP(req)}`, 120, 60_000))
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   const top = await filterBlacklisted(
     (await getTopCardsByValue(24)).map(c => ({ ...c }))
   )
