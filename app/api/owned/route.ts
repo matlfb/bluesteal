@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   if (!filtered.length) return NextResponse.json({ owned: [] })
 
   const dids = filtered.map(o => o.subject_did)
-  const rawValues = await redis.hmget('card_values:all', ...dids)
+  const rawValues = (await redis.hmget('card_values:all', ...dids)) ?? []
   const withValues = filtered.map((o, i) => ({
     ...o,
     value: rawValues[i] ? Number(rawValues[i]) : BASE_VALUE,
