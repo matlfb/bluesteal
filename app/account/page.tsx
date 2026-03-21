@@ -282,7 +282,7 @@ export default function ComptePage() {
         {/* Tab bar */}
         <div style={{ display: 'flex', marginBottom: '2rem', borderBottom: '1px solid rgba(0,229,255,0.08)', paddingBottom: 0, position: 'sticky', top: 60, zIndex: 10, background: 'var(--bg)' }}>
           {([
-            { id: 'collection', label: t('account_tab_collection') },
+            { id: 'collection', label: `${t('account_tab_collection')}${ownedCards.length > 0 ? ` (${ownedCards.length})` : ''}` },
             { id: 'history',    label: t('account_tab_history')    },
             { id: 'posts',      label: t('account_tab_bsky')       },
           ] as { id: Tab; label: string }[]).map(t => (

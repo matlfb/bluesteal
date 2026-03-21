@@ -468,7 +468,7 @@ export default function ProfilPage() {
         }}>
           <div style={{ display: 'flex', gap: 0 }}>
             {([
-              { id: 'collection', label: t('profil_tab_collection') },
+              { id: 'collection', label: `${t('profil_tab_collection')}${ownedCards.length > 0 ? ` (${ownedCards.length})` : ''}` },
               { id: 'history',    label: t('profil_tab_history')    },
               { id: 'posts',      label: t('profil_tab_bsky')       },
             ] as { id: Tab; label: string }[]).map(t => (
