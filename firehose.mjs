@@ -185,3 +185,21 @@ function connect() {
 connect()
 setTimeout(runHourly, 3000)
 setInterval(runHourly, 60 * 60 * 1000)
+
+// Sync blacklist every 5 minutes via Vercel cron endpoint
+async function syncBlacklist() {
+  const url = process.env.VERCEL_APP_URL
+  const secret = process.env.CRON_SECRET
+  if (!url || !secret) return
+  try {
+    const res = await fetch(`${url}/api/cron/sync-blacklist`, {
+      headers: { 'x-cron-secret': secret }
+    })
+    const data = await res.json()
+    console.log('[blacklist] sync:', data)
+  } catch (err) {
+    console.error('[blacklist] sync failed:', err.message)
+  }
+}
+
+setInterval(syncBlacklist, 5 * 60 * 1000)
