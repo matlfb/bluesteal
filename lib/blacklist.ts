@@ -38,34 +38,39 @@ export async function getBlacklist(): Promise<{ manual: string[]; auto: string[]
   return { manual, auto, optedOut }
 }
 
-export async function syncFromClearsky(handle = 'bluesteal.app'): Promise<{ added: number; removed: number; optedOut: number }> {
-  // Sync outgoing blocks (bluesteal.app blocked them) → blacklist:auto
-  const countRes = await fetch(
-    `https://public.api.clearsky.services/api/v1/anon/single-blocklist/total/${handle}`,
-    { signal: AbortSignal.timeout(10_000) }
+async function resolvePds(handle: string): Promise<{ did: string; pds: string }> {
+  const didRes = await fetch(
+    `https://bsky.social/xrpc/com.atproto.identity.resolveHandle?handle=${encodeURIComponent(handle)}`,
+    { signal: AbortSignal.timeout(8_000) }
   )
-  if (!countRes.ok) throw new Error(`ClearSky total failed: ${countRes.status}`)
-  const countData = await countRes.json()
-  const total: number = countData.data?.count ?? 0
+  if (!didRes.ok) throw new Error(`resolveHandle failed: ${didRes.status}`)
+  const { did } = await didRes.json()
+  const docRes = await fetch(`https://plc.directory/${did}`, { signal: AbortSignal.timeout(8_000) })
+  if (!docRes.ok) throw new Error(`DID doc fetch failed: ${docRes.status}`)
+  const doc = await docRes.json()
+  const pds: string = doc.service?.find((s: any) => s.type === 'AtprotoPersonalDataServer')?.serviceEndpoint
+  if (!pds) throw new Error(`No PDS found for ${handle}`)
+  return { did, pds }
+}
 
+export async function syncFromClearsky(handle = 'bluesteal.app'): Promise<{ added: number; removed: number; optedOut: number }> {
+  // Sync outgoing blocks via AT Protocol (real-time, no ClearSky delay)
+  const { did, pds } = await resolvePds(handle)
   const newAutoSet = new Set<string>()
-  if (total > 0) {
-    const pages = Math.ceil(total / 100)
-    for (let page = 1; page <= pages; page++) {
-      const res = await fetch(
-        `https://public.api.clearsky.services/api/v1/anon/single-blocklist/${handle}/${page}`,
-        { signal: AbortSignal.timeout(10_000) }
-      )
-      if (!res.ok) continue
-      const data = await res.json()
-      for (const item of (data.data?.blocklist ?? [])) {
-        if (item.did) newAutoSet.add(item.did)
-      }
-      if (page < pages) await new Promise(r => setTimeout(r, 220))
+  let cursor: string | undefined
+  do {
+    const url = `${pds}/xrpc/com.atproto.repo.listRecords?repo=${encodeURIComponent(did)}&collection=app.bsky.graph.block&limit=100${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`
+    const res = await fetch(url, { signal: AbortSignal.timeout(8_000) })
+    if (!res.ok) break
+    const data = await res.json()
+    for (const record of (data.records ?? [])) {
+      const subject: string = record.value?.subject
+      if (subject) newAutoSet.add(subject)
     }
-  }
+    cursor = data.cursor
+  } while (cursor)
 
-  // Sync incoming blocks (they blocked bluesteal.app = opt-out) → blacklist:opted-out
+  // Sync incoming blocks (they blocked @bluesteal.app = opt-out) via ClearSky
   const incomingRes = await fetch(
     `https://public.api.clearsky.services/api/v1/anon/blocklist/${handle}`,
     { signal: AbortSignal.timeout(10_000) }
