@@ -10,7 +10,8 @@ interface ActivityEvent {
   buyer_handle: string
   subject_did: string
   subject_handle: string
-  prev_owner_handle?: string
+  prev_owner_did?: string | null
+  prev_owner_handle?: string | null
   price: number
   at: string
 }
@@ -44,13 +45,13 @@ function Avatar({ profile, handle, size = 36 }: { profile: Profile | null; handl
   )
 }
 
-function EventRow({ ev, profileCache, isFriendsTab, followingSet, isMineTab, myHandle }: {
+function EventRow({ ev, profileCache, isFriendsTab, followingSet, isMineTab, myDid }: {
   ev: ActivityEvent
   profileCache: Record<string, Profile>
   isFriendsTab: boolean
   followingSet: Set<string>
   isMineTab?: boolean
-  myHandle?: string
+  myDid?: string
 }) {
   const { t, fmtDate, fmtNum } = useLang()
   const buyer   = profileCache[ev.buyer_did]
@@ -60,12 +61,12 @@ function EventRow({ ev, profileCache, isFriendsTab, followingSet, isMineTab, myH
   const subjectIsFriend = isFriendsTab && followingSet.has(ev.subject_did) && !followingSet.has(ev.buyer_did)
 
   // In mine tab: distinguish "you bought" vs "someone bought from you"
-  const youBought = isMineTab && ev.buyer_handle === myHandle
+  const youBought = isMineTab && ev.buyer_did === myDid
   const soldFromYou = isMineTab && !youBought
 
   let verb: string
   if (isMineTab) {
-    verb = youBought ? t('activity_you_bought') : t('activity_you_sold', { buyer: ev.buyer_handle })
+    verb = youBought ? t('activity_you_bought') : t('activity_you_sold', { buyer: ev.buyer_handle ?? ev.buyer_did })
   } else {
     verb = subjectIsFriend ? t('activity_bought_by') : t('activity_bought')
   }
@@ -327,16 +328,16 @@ export default function ActivityPage() {
 
   // Fetch mine tab (initial + polling every 60s)
   const fetchMine = useCallback(async (isPolling = false) => {
-    if (!user?.did || !user?.handle) return
+    if (!user?.did) return
     try {
-      const r = await fetch(`/api/activity?type=mine&did=${encodeURIComponent(user.did)}&handle=${encodeURIComponent(user.handle)}&limit=60`)
+      const r = await fetch(`/api/activity?type=mine&limit=60`)
       const data = await r.json()
       const events: ActivityEvent[] = data.events ?? []
 
       if (isPolling && lastMineAt.current) {
-        // Find new sold events (prev_owner_handle === myHandle) since last poll
+        // Find new sold events (prev_owner_did === user.did) since last poll
         const newSold = events.filter(
-          e => e.prev_owner_handle === user.handle && e.at > lastMineAt.current!
+          e => e.prev_owner_did === user!.did && e.at > lastMineAt.current!
         )
         if (newSold.length > 0) {
           setUnseenMine(prev => prev + newSold.length)
@@ -355,7 +356,7 @@ export default function ActivityPage() {
       setMineEvents(events)
       await cacheProfiles(events)
     } catch {}
-  }, [user?.did, user?.handle])
+  }, [user?.did])
 
   // Load mine tab when user logs in (initial fetch + polling)
   useEffect(() => {
@@ -481,7 +482,7 @@ export default function ActivityPage() {
                 isFriendsTab={tab === 'friends'}
                 followingSet={followingSet}
                 isMineTab={tab === 'mine'}
-                myHandle={user?.handle}
+                myDid={user?.did}
               />
             ))}
           </div>

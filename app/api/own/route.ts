@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getOwner, setOwner } from '@/lib/db'
 import { debitBalance, getBalance } from '@/lib/balances'
 import { appreciateValue, getValue } from '@/lib/card-values'
-import { addEvent } from '@/lib/history'
 import { addActivity } from '@/lib/activity'
 import { verifySession } from '@/lib/session'
 import { rateLimit } from '@/lib/rate-limit'
@@ -28,7 +27,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { subject_did, subject_handle } = body
+  const { subject_did } = body
   if (!subject_did) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
   if (!DID_RE.test(subject_did)) return NextResponse.json({ error: 'Invalid subject' }, { status: 400 })
   if (subject_did === owner_did) return NextResponse.json({ error: 'Cannot buy your own card' }, { status: 400 })
@@ -55,36 +54,13 @@ export async function POST(req: NextRequest) {
   const prevOwner = await getOwner(subject_did)
   const now = new Date().toISOString()
 
-  if (prevOwner && prevOwner.owner_did !== owner_did) {
-    await addEvent({
-      type: 'lost',
-      actor_did: prevOwner.owner_did,
-      subject_did,
-      subject_handle: subject_handle ?? subject_did,
-      price,
-      at: now,
-      counterpart_handle: owner_handle,
-    })
-  }
-
   const [newValue] = await Promise.all([
     appreciateValue(subject_did),
     setOwner({ subject_did, owner_did, owner_handle, purchased_at: now }),
-    addEvent({
-      type: 'bought',
-      actor_did: owner_did,
-      subject_did,
-      subject_handle: subject_handle ?? subject_did,
-      price,
-      at: now,
-      counterpart_handle: prevOwner?.owner_handle,
-    }),
     addActivity({
       buyer_did: owner_did,
-      buyer_handle: owner_handle,
       subject_did,
-      subject_handle: subject_handle ?? subject_did,
-      prev_owner_handle: prevOwner?.owner_handle,
+      prev_owner_did: prevOwner?.owner_did ?? null,
       price,
       at: now,
     }),

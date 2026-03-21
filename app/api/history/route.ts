@@ -1,8 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getHistory, getCardHistory } from '@/lib/history'
+import { getUserActivity, getCardActivity, LedgerEvent } from '@/lib/activity'
+import { batchProfiles } from '@/lib/profiles'
 import { rateLimit, getClientIP } from '@/lib/rate-limit'
 
 export const runtime = 'nodejs'
+
+async function toHistoryEvents(events: LedgerEvent[], viewerDid: string | null, isCardView: boolean) {
+  const dids = [...new Set(events.flatMap(e =>
+    [e.buyer_did, e.subject_did, e.prev_owner_did].filter(Boolean) as string[]
+  ))]
+  const profiles = await batchProfiles(dids)
+
+  return events.map(e => {
+    const isBought = isCardView || e.buyer_did === viewerDid
+    // For user history: buyer_did === viewerDid → 'bought', prev_owner_did === viewerDid → 'lost'
+    // For card history: always 'bought' (shows who acquired the card)
+    const type = isBought ? 'bought' : 'lost'
+
+    // actor = the one performing the action
+    // - bought: the buyer
+    // - lost: the previous owner (viewer)
+    const actor_did = isBought ? e.buyer_did : (e.prev_owner_did ?? viewerDid ?? e.buyer_did)
+    // counterpart = the other party
+    // - bought: who it was stolen from (prev owner)
+    // - lost: who stole it (buyer)
+    const counterpart_did = isBought ? e.prev_owner_did : e.buyer_did
+
+    return {
+      type,
+      actor_did,
+      actor_handle: profiles[actor_did]?.handle ?? actor_did,
+      actor_avatar: profiles[actor_did]?.avatar ?? null,
+      subject_did: e.subject_did,
+      subject_handle: profiles[e.subject_did]?.handle ?? e.subject_did,
+      subject_avatar: profiles[e.subject_did]?.avatar ?? null,
+      counterpart_did,
+      counterpart_handle: counterpart_did ? (profiles[counterpart_did]?.handle ?? counterpart_did) : null,
+      counterpart_avatar: counterpart_did ? (profiles[counterpart_did]?.avatar ?? null) : null,
+      price: e.price,
+      at: e.at,
+    }
+  })
+}
 
 export async function GET(req: NextRequest) {
   if (!await rateLimit(`pub:${getClientIP(req)}`, 120, 60_000))
@@ -12,47 +51,9 @@ export async function GET(req: NextRequest) {
   const subject = req.nextUrl.searchParams.get('subject')
   if (!did && !subject) return NextResponse.json({ events: [] })
 
-  const events = subject ? await getCardHistory(subject) : await getHistory(did!)
-  if (!events.length) return NextResponse.json({ events: [] })
+  const raw = subject ? await getCardActivity(subject) : await getUserActivity(did!)
+  if (!raw.length) return NextResponse.json({ events: [] })
 
-  // For card history: resolve actor handles from DIDs
-  const profileById: Record<string, { handle: string; avatar: string | null }> = {}
-  if (subject) {
-    const actorDids = [...new Set(events.map(e => e.actor_did))].slice(0, 50)
-    try {
-      for (let i = 0; i < actorDids.length; i += 25) {
-        const batch = actorDids.slice(i, i + 25)
-        const params = batch.map(d => `actors=${encodeURIComponent(d)}`).join('&')
-        const res = await fetch(`https://public.api.bsky.app/xrpc/app.bsky.actor.getProfiles?${params}`, { cache: 'no-store' })
-        const { profiles = [] } = await res.json()
-        for (const p of profiles) profileById[p.did] = { handle: p.handle, avatar: p.avatar ?? null }
-      }
-    } catch {}
-  }
-
-  // Collect unique handles to fetch avatars
-  const handles = [...new Set(
-    events.flatMap(e => [e.subject_handle, e.counterpart_handle].filter(Boolean) as string[])
-  )].slice(0, 50)
-
-  const avatars: Record<string, string | null> = {}
-  try {
-    for (let i = 0; i < handles.length; i += 25) {
-      const batch = handles.slice(i, i + 25)
-      const params = batch.map(h => `actors=${encodeURIComponent(h)}`).join('&')
-      const res = await fetch(`https://public.api.bsky.app/xrpc/app.bsky.actor.getProfiles?${params}`, { cache: 'no-store' })
-      const { profiles = [] } = await res.json()
-      for (const p of profiles) avatars[p.handle] = p.avatar ?? null
-    }
-  } catch {}
-
-  return NextResponse.json({
-    events: events.map(e => ({
-      ...e,
-      actor_handle: profileById[e.actor_did]?.handle ?? null,
-      actor_avatar: profileById[e.actor_did]?.avatar ?? null,
-      subject_avatar: avatars[e.subject_handle] ?? null,
-      counterpart_avatar: e.counterpart_handle ? (avatars[e.counterpart_handle] ?? null) : null,
-    }))
-  })
+  const events = await toHistoryEvents(raw, did, !!subject)
+  return NextResponse.json({ events })
 }
