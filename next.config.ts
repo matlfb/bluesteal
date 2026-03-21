@@ -13,7 +13,7 @@ const securityHeaders = [
       "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://cdn.bsky.app https://*.bsky.network https://*.bsky.app",
-      "connect-src 'self' https://bsky.social https://*.bsky.network https://*.bsky.app https://public.api.bsky.app https://eurosky.social https://plc.directory",
+      "connect-src 'self' https:",
       "font-src 'self'",
       "frame-ancestors 'none'",
     ].join('; '),
