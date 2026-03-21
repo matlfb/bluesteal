@@ -31,9 +31,11 @@ export async function getGlobalActivity(limit = 50): Promise<LedgerEvent[]> {
   return items.map(parse)
 }
 
+const SCAN_LIMIT = 2000
+
 export async function getFriendsActivity(dids: string[], limit = 50): Promise<LedgerEvent[]> {
   const set = new Set(dids)
-  const all = await redis.lrange('activity:global', 0, -1)
+  const all = await redis.lrange('activity:global', 0, SCAN_LIMIT - 1)
   return all
     .map(parse)
     .filter(e => set.has(e.buyer_did) || set.has(e.subject_did))
@@ -41,7 +43,7 @@ export async function getFriendsActivity(dids: string[], limit = 50): Promise<Le
 }
 
 export async function getUserActivity(did: string, limit = 50): Promise<LedgerEvent[]> {
-  const all = await redis.lrange('activity:global', 0, -1)
+  const all = await redis.lrange('activity:global', 0, SCAN_LIMIT - 1)
   return all
     .map(parse)
     .filter(e => e.buyer_did === did || e.prev_owner_did === did)
@@ -49,6 +51,6 @@ export async function getUserActivity(did: string, limit = 50): Promise<LedgerEv
 }
 
 export async function getCardActivity(subject_did: string): Promise<LedgerEvent[]> {
-  const all = await redis.lrange('activity:global', 0, -1)
+  const all = await redis.lrange('activity:global', 0, SCAN_LIMIT - 1)
   return all.map(parse).filter(e => e.subject_did === subject_did)
 }

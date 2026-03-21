@@ -48,8 +48,8 @@ export async function getAllOwnerships(): Promise<Record<string, Ownership>> {
 export async function getOwnedByOwner(ownerDid: string): Promise<{ subject_did: string; purchased_at: string }[]> {
   const dids = await redis.smembers(`owner:${ownerDid}:cards`)
   if (!dids.length) return []
-  const ownerships = await Promise.all(dids.map(d => getOwner(d)))
-  return ownerships
+  const values = await redis.mget<(Ownership | null)[]>(...dids.map(d => `ownership:${d}`))
+  return values
     .filter((o): o is Ownership => o !== null && o.owner_did === ownerDid)
     .map(o => ({ subject_did: o.subject_did, purchased_at: o.purchased_at }))
 }
