@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
       did, handle: p?.handle ?? did, displayName: p?.displayName ?? did,
       avatar: p?.avatar ?? null, followersCount: p?.followersCount ?? 0,
       owner_handle: owner ? (profileMap[owner.owner_did]?.handle ?? owner.owner_did) : null,
-      verified: p?.verification?.verifiedStatus === 'valid', value,
+      verified: p?.verification?.verifiedStatus === 'valid' || p?.verification?.trustedVerifierStatus === 'valid', value,
     }
   })
 
