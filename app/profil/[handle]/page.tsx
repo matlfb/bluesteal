@@ -113,6 +113,7 @@ export default function ProfilPage() {
   const [showConfetti, setShowConfetti] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [historyEvents, setHistoryEvents] = useState<HistoryEvent[]>([])
+  const [cardHistory, setCardHistory] = useState<HistoryEvent[]>([])
   const [tab, setTab] = useState<Tab>('collection')
 
   useEffect(() => {
@@ -179,6 +180,10 @@ export default function ProfilPage() {
       fetch(`/api/history?did=${encodeURIComponent(data.did)}`)
         .then(r => r.json())
         .then(d => setHistoryEvents(d.events ?? []))
+        .catch(() => {})
+      fetch(`/api/history?subject=${encodeURIComponent(data.did)}`)
+        .then(r => r.json())
+        .then(d => setCardHistory(d.events ?? []))
         .catch(() => {})
     }).catch(() => setNotFound(true))
       .finally(() => setLoading(false))
@@ -503,7 +508,7 @@ export default function ProfilPage() {
 
         {/* HISTORIQUE */}
         {tab === 'history' && (
-          <HistoryTab events={historyEvents} />
+          <HistoryTab events={historyEvents} cardHistory={cardHistory} />
         )}
 
         {/* ACTIVITÉ BSKY */}

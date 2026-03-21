@@ -16,12 +16,19 @@ export async function addEvent(event: HistoryEvent): Promise<void> {
   pipe.ltrim(`history:${event.actor_did}`, 0, 499)
   if (event.type === 'bought') {
     pipe.hincrby('steals:all', event.actor_did, 1)
+    pipe.lpush(`card_history:${event.subject_did}`, JSON.stringify(event))
+    pipe.ltrim(`card_history:${event.subject_did}`, 0, 199)
   }
   await pipe.exec()
 }
 
 export async function getHistory(did: string): Promise<HistoryEvent[]> {
   const items = await redis.lrange(`history:${did}`, 0, 499)
+  return items.map(item => typeof item === 'string' ? JSON.parse(item) : item as HistoryEvent)
+}
+
+export async function getCardHistory(subject_did: string): Promise<HistoryEvent[]> {
+  const items = await redis.lrange(`card_history:${subject_did}`, 0, 199)
   return items.map(item => typeof item === 'string' ? JSON.parse(item) : item as HistoryEvent)
 }
 
