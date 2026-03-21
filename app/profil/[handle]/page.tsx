@@ -26,6 +26,7 @@ interface FullProfile {
 }
 
 interface OwnedCard {
+  did: string
   handle: string
   displayName: string
   avatar: string | null
@@ -79,7 +80,8 @@ async function fetchOwnedCards(ownerDid: string): Promise<OwnedCard[]> {
     .map(o => {
       const p = profileMap[o.subject_did]
       return {
-        handle: p?.handle || o.subject_did,
+        did: o.subject_did,
+      handle: p?.handle || o.subject_did,
         displayName: p?.displayName || p?.handle || o.subject_did,
         avatar: p?.avatar || null,
         followersCount: p?.followersCount || 0,
@@ -115,6 +117,8 @@ export default function ProfilPage() {
   const [historyEvents, setHistoryEvents] = useState<HistoryEvent[]>([])
   const [cardHistory, setCardHistory] = useState<HistoryEvent[]>([])
   const [tab, setTab] = useState<Tab>('collection')
+  const [collectionModal, setCollectionModal] = useState<OwnedCard | null>(null)
+  const [collectionStealing, setCollectionStealing] = useState(false)
 
   useEffect(() => {
     if (!handle) return
@@ -285,6 +289,34 @@ export default function ProfilPage() {
     } finally {
       setStealing(false)
     }
+  }
+
+  async function handleCollectionSteal(shareOnBsky = false) {
+    if (!session || !user || !collectionModal || collectionStealing) return
+    setCollectionStealing(true)
+    try {
+      const agent = new Agent(session)
+      await agent.com.atproto.repo.createRecord({
+        repo: user.did, collection: 'blue.steal.card',
+        record: { $type: 'blue.steal.card', subject: { did: collectionModal.did, handle: collectionModal.handle }, price: collectionModal.value, purchasedAt: new Date().toISOString() },
+      })
+      deductJetons(collectionModal.value)
+      addOwned(collectionModal.did)
+      fetch('/api/own', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject_did: collectionModal.did, subject_handle: collectionModal.handle, owner_did: user.did, owner_handle: user.handle, purchased_at: new Date().toISOString() }),
+      }).catch(() => {})
+      setOwnedCards(prev => prev.filter(c => c.did !== collectionModal.did))
+      setShowConfetti(true)
+      setCollectionModal(null)
+      if (shareOnBsky) {
+        const text = `I just bought @${collectionModal.handle} from @${profile!.handle} for ${collectionModal.value.toLocaleString()} tokens on @bluesteal.app 🔥`
+        const rt = new RichText({ text })
+        await rt.detectFacets(agent)
+        agent.post({ text: rt.text, facets: rt.facets }).catch(() => {})
+      }
+    } catch (e) { console.error('Collection steal failed:', e) }
+    finally { setCollectionStealing(false) }
   }
 
   return (
@@ -476,7 +508,7 @@ export default function ProfilPage() {
                       price={card.value}
                       owner={profile.handle}
                       ownerHref={`/profil/${profile.handle}`}
-                      onPillClick={() => { window.location.href = `/profil/${card.handle}` }}
+                      onPillClick={user && !ownedDids.has(card.did) && user.did !== card.did && user.did !== profile.did ? () => setCollectionModal(card) : undefined}
                     />
                   </Link>
                 ))}
@@ -546,6 +578,20 @@ export default function ProfilPage() {
 
       </div>
 
+
+      {/* Collection card steal modal */}
+      <StealModal
+        open={!!collectionModal}
+        handle={collectionModal?.handle ?? ''}
+        displayName={collectionModal?.displayName ?? ''}
+        avatar={collectionModal?.avatar ?? null}
+        price={collectionModal?.value ?? 0}
+        prevOwnerHandle={profile?.handle}
+        isOwned={!!collectionModal && ownedDids.has(collectionModal.did)}
+        stealing={collectionStealing}
+        onConfirm={(share) => handleCollectionSteal(share)}
+        onClose={() => setCollectionModal(null)}
+      />
 
       {/* Steal modal */}
       <Confetti active={showConfetti} onDone={() => setShowConfetti(false)} />
