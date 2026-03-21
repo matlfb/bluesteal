@@ -13,5 +13,5 @@ export async function GET(req: NextRequest) {
   if (!did) return NextResponse.json({ error: 'missing did' }, { status: 400 })
   if (did !== session_did) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  return NextResponse.json({ balance: getBalance(did) })
+  return NextResponse.json({ balance: await getBalance(did) })
 }
