@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
         followersCount: p.followersCount ?? 0,
         owner_handle: owner?.handle ?? r.owner_did,
         purchased_at: r.purchased_at, value: await getValue(r.subject_did),
-        verified: p.verification?.verifiedStatus === 'valid',
+        verified: p.verification?.verifiedStatus === 'valid' || p.verification?.trustedVerifierStatus === 'valid',
       }
     }))
     return NextResponse.json({ cards: cards.filter(Boolean) })
