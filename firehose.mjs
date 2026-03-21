@@ -83,6 +83,9 @@ async function setOwnership(o) {
   const prev = await redis('get', `ownership:${o.subject_did}`)
   const prevOwner = prev ? (typeof prev === 'string' ? JSON.parse(prev) : prev) : null
 
+  // Skip if already owned by same owner (dedup duplicate firehose events)
+  if (prevOwner && prevOwner.owner_did === o.owner_did) return
+
   const cmds = [
     ['set', `ownership:${o.subject_did}`, json],
     ['hset', 'ownerships:all', o.subject_did, json],
@@ -90,7 +93,7 @@ async function setOwnership(o) {
     ['lpush', 'ownerships:recent', json],
     ['ltrim', 'ownerships:recent', '0', '49'],
   ]
-  if (prevOwner && prevOwner.owner_did !== o.owner_did) {
+  if (prevOwner) {
     cmds.push(['srem', `owner:${prevOwner.owner_did}:cards`, o.subject_did])
   }
 
