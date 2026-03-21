@@ -138,7 +138,7 @@ export default function ProfilPage() {
         followersCount: data.followersCount || 0,
         followsCount: data.followsCount || 0,
         postsCount: data.postsCount || 0,
-        verified: data.verification?.verifiedStatus === 'valid',
+        verified: data.verification?.verifiedStatus === 'valid' || data.verification?.trustedVerifierStatus === 'valid',
       }
       // Check blacklist before displaying
       const bl = await fetch('/api/blacklist?did=' + encodeURIComponent(data.did)).then(r => r.json()).catch(() => ({ blacklisted: false }))

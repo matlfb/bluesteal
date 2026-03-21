@@ -17,7 +17,7 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 interface SearchResult {
-  did: string; handle: string; displayName: string; avatar: string | null; followersCount: number
+  did: string; handle: string; displayName: string; avatar: string | null; followersCount: number; verified: boolean
 }
 
 function IconHome({ active }: { active: boolean }) {
@@ -116,6 +116,7 @@ export default function Navbar() {
           displayName: a.displayName || a.handle,
           avatar: a.avatar || null,
           followersCount: a.followersCount || 0,
+          verified: a.verification?.verifiedStatus === 'valid' || a.verification?.trustedVerifierStatus === 'valid',
         })))
         setFocusedIdx(-1)
       })
@@ -224,7 +225,10 @@ export default function Navbar() {
                       {r.avatar ? <img src={r.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontFamily: 'var(--font-serif)', fontSize: '1.2rem', color: '#00e5ff', fontStyle: 'italic', opacity: 0.4 }}>{r.displayName.charAt(0)}</span></div>}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 600, color: '#e8e6dc', marginBottom: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.displayName}</p>
+                      <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 600, color: '#e8e6dc', marginBottom: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {r.displayName}
+                        {r.verified && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="12" fill="#0085ff"/><path d="M7 12.5l3.5 3.5 6.5-7" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                      </p>
                       <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         @{r.handle}
                         {r.followersCount > 0 && <span style={{ marginLeft: '0.75rem', color: 'var(--t4)' }}>{t('nav_followers_short', { n: formatFollowers(r.followersCount) })}</span>}
@@ -353,7 +357,10 @@ export default function Navbar() {
                     {r.avatar ? <img src={r.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontFamily: 'var(--font-serif)', fontSize: '1rem', color: '#00e5ff', fontStyle: 'italic', opacity: 0.4 }}>{r.displayName.charAt(0)}</span></div>}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 600, color: '#e8e6dc', marginBottom: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.displayName}</p>
+                    <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 600, color: '#e8e6dc', marginBottom: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      {r.displayName}
+                      {r.verified && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="12" fill="#0085ff"/><path d="M7 12.5l3.5 3.5 6.5-7" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    </p>
                     <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{r.handle}</p>
                   </div>
                   <div style={{ flexShrink: 0 }}>
