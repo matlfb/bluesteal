@@ -66,11 +66,15 @@ export async function POST(req: NextRequest) {
     if (alreadyInLedger) continue
 
     // This ownership has no corresponding ledger entry — reconstruct it
-    const lastEntry = cardEntries[0] ?? null
-    const price = lastEntry?.price ?? 1500 // best-effort: last known price
+    // Find entries BEFORE this purchase to get previous owner and price
+    const priorEntries = cardEntries.filter(e => e.at < o.purchased_at)
+    const lastEntry = priorEntries[0] ?? null
+    const price = lastEntry?.price ?? 1500
 
-    // prev_owner = whoever owned it just before (buyer of the most recent ledger entry)
-    const prev_owner_did = lastEntry?.buyer_did ?? null
+    // prev_owner = last buyer before this purchase, but not the same person
+    const prev_owner_did = lastEntry && lastEntry.buyer_did !== o.owner_did
+      ? lastEntry.buyer_did
+      : null
 
     missing.push({
       buyer_did: o.owner_did,
