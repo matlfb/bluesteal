@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react'
 import type { OAuthSession } from '@atproto/oauth-client-browser'
 
 interface AuthUser {
@@ -53,6 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [jetons, setJetons] = useState(25000)
   const [ownedDids, setOwnedDids] = useState<Set<string>>(new Set())
   const [hasActivityAlert, setHasActivityAlert] = useState(false)
+  const notifGrantedRef = useRef(false)
+  const userDidRef = useRef<string | null>(null)
 
   function syncBalance(did: string) {
     fetch(`/api/balance?did=${encodeURIComponent(did)}`)
@@ -82,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try { localStorage.setItem(ACTIVITY_LAST_SEEN_KEY, new Date().toISOString()) } catch {}
   }
 
-  const checkActivityAlert = useCallback(async () => {
+  const checkActivityAlert = useCallback(async (fireNotifs = false) => {
     try {
       const res = await fetch('/api/activity?type=mine&limit=50')
       if (!res.ok) return
@@ -90,10 +92,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const lastSeen = (() => {
         try { return localStorage.getItem(ACTIVITY_LAST_SEEN_KEY) ?? '1970-01-01T00:00:00Z' } catch { return '1970-01-01T00:00:00Z' }
       })()
-      const hasNew = (data.events ?? []).some(
-        (e: any) => e.type === 'lost' && e.at > lastSeen
+      const userDid = userDidRef.current
+      const lostEvents = (data.events ?? []).filter(
+        (e: any) => e.prev_owner_did === userDid && e.at > lastSeen
       )
-      setHasActivityAlert(hasNew)
+      if (lostEvents.length > 0) {
+        setHasActivityAlert(true)
+        if (fireNotifs && notifGrantedRef.current) {
+          for (const ev of lostEvents) {
+            new Notification('BlueSTEAL', {
+              body: `@${ev.buyer_handle} bought @${ev.subject_handle} from your collection`,
+              icon: '/favicon.ico',
+            })
+          }
+        }
+      } else {
+        const hasAny = (data.events ?? []).some((e: any) => e.at > lastSeen)
+        if (!hasAny) setHasActivityAlert(false)
+      }
     } catch {}
   }, [])
 
@@ -159,11 +175,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     syncBalance(did)
   }
 
+  // Keep userDidRef in sync
+  useEffect(() => { userDidRef.current = user?.did ?? null }, [user?.did])
+
+  // Request notification permission on login
+  useEffect(() => {
+    if (!user) return
+    if (typeof Notification === 'undefined') return
+    if (Notification.permission === 'granted') { notifGrantedRef.current = true; return }
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().then(p => { notifGrantedRef.current = p === 'granted' })
+    }
+  }, [user?.did])
+
   // Check for stolen cards once session is ready, then every 60s
   useEffect(() => {
     if (!user) return
-    checkActivityAlert()
-    const id = setInterval(checkActivityAlert, 60_000)
+    checkActivityAlert(false)
+    const id = setInterval(() => checkActivityAlert(true), 60_000)
     return () => clearInterval(id)
   }, [user?.did, checkActivityAlert])
 

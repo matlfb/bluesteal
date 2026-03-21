@@ -18,6 +18,7 @@ async function enrich(events: LedgerEvent[]) {
     buyer_avatar: profiles[e.buyer_did]?.avatar ?? null,
     subject_handle: profiles[e.subject_did]?.handle ?? e.subject_did,
     subject_avatar: profiles[e.subject_did]?.avatar ?? null,
+    subject_verified: profiles[e.subject_did]?.verified ?? false,
     prev_owner_handle: e.prev_owner_did ? (profiles[e.prev_owner_did]?.handle ?? e.prev_owner_did) : null,
     prev_owner_avatar: e.prev_owner_did ? (profiles[e.prev_owner_did]?.avatar ?? null) : null,
   }))

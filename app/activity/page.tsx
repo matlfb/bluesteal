@@ -10,6 +10,7 @@ interface ActivityEvent {
   buyer_handle: string
   subject_did: string
   subject_handle: string
+  subject_verified?: boolean
   prev_owner_did?: string | null
   prev_owner_handle?: string | null
   price: number
@@ -104,11 +105,12 @@ function EventRow({ ev, profileCache, isFriendsTab, followingSet, isMineTab, myD
                         </div>
                     }
                   </div>
-                  <Link href={`/profil/${ev.subject_handle}`} style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, color: 'var(--brand)', textDecoration: 'none' }}
+                  <Link href={`/profil/${ev.subject_handle}`} style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, color: 'var(--brand)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '3px' }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t1)' }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--brand)' }}
                   >
                     @{ev.subject_handle}
+                    {ev.subject_verified && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="12" fill="#0085ff"/><path d="M7 12.5l3.5 3.5 6.5-7" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                   </Link>
                 </div>
                 {ev.prev_owner_handle && (
@@ -144,11 +146,12 @@ function EventRow({ ev, profileCache, isFriendsTab, followingSet, isMineTab, myD
                         </div>
                     }
                   </div>
-                  <Link href={`/profil/${ev.subject_handle}`} style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, color: 'var(--brand)', textDecoration: 'none' }}
+                  <Link href={`/profil/${ev.subject_handle}`} style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, color: 'var(--brand)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '3px' }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t1)' }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--brand)' }}
                   >
                     @{ev.subject_handle}
+                    {ev.subject_verified && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="12" fill="#0085ff"/><path d="M7 12.5l3.5 3.5 6.5-7" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                   </Link>
                 </div>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#e05252', flexShrink: 0 }}>
