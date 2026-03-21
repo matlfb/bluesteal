@@ -41,7 +41,10 @@ async function redisPipeline(commands) {
 
 async function getBalance(did) {
   const val = await redis('get', `balance:${did}`)
-  if (!val) return STARTING_BALANCE
+  if (!val) {
+    await setBalance(did, STARTING_BALANCE)
+    return STARTING_BALANCE
+  }
   return (typeof val === 'string' ? JSON.parse(val) : val).balance ?? STARTING_BALANCE
 }
 

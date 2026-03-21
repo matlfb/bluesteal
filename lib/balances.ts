@@ -4,7 +4,10 @@ export const STARTING_BALANCE = 25000
 
 export async function getBalance(did: string): Promise<number> {
   const val = await redis.get(`balance:${did}`)
-  if (!val) return STARTING_BALANCE
+  if (!val) {
+    await redis.set(`balance:${did}`, JSON.stringify({ balance: STARTING_BALANCE }))
+    return STARTING_BALANCE
+  }
   const b = typeof val === 'string' ? JSON.parse(val) : val as { balance: number }
   return b.balance ?? STARTING_BALANCE
 }
