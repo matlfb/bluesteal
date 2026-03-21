@@ -10,21 +10,38 @@ export async function POST(req: NextRequest) {
   if (!secret || secret !== process.env.ADMIN_SECRET)
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-  // Load full ledger and all current ownerships
-  const [ledgerRaw, ownershipsHash] = await Promise.all([
+  // Load full ledger, ownerships:all hash, and ownerships:recent list
+  const [ledgerRaw, ownershipsHash, recentRaw] = await Promise.all([
     redis.lrange('activity:global', 0, -1),
     redis.hgetall('ownerships:all'),
+    redis.lrange('ownerships:recent', 0, -1),
   ])
 
   const ledger = ledgerRaw.map(i => typeof i === 'string' ? JSON.parse(i) : i) as Array<{
     buyer_did: string; subject_did: string; prev_owner_did: string | null; price: number; at: string
   }>
 
-  if (!ownershipsHash) return NextResponse.json({ patched: 0 })
+  // Merge ownerships:all and ownerships:recent, deduplicated by subject_did (most recent wins)
+  const ownershipMap = new Map<string, { subject_did: string; owner_did: string; purchased_at: string }>()
 
-  const ownerships = Object.values(ownershipsHash).map(v =>
-    typeof v === 'string' ? JSON.parse(v) : v
-  ) as Array<{ subject_did: string; owner_did: string; purchased_at: string }>
+  if (ownershipsHash) {
+    for (const v of Object.values(ownershipsHash)) {
+      const o = typeof v === 'string' ? JSON.parse(v) : v
+      ownershipMap.set(o.subject_did, o)
+    }
+  }
+  // ownerships:recent may contain entries not in ownerships:all (Pi migration gap)
+  for (const raw of recentRaw) {
+    const o = typeof raw === 'string' ? JSON.parse(raw) : raw
+    if (!o.subject_did) continue
+    const existing = ownershipMap.get(o.subject_did)
+    // Keep the most recent purchased_at
+    if (!existing || o.purchased_at > existing.purchased_at) {
+      ownershipMap.set(o.subject_did, o)
+    }
+  }
+
+  const ownerships = [...ownershipMap.values()]
 
   // Build a set of (buyer_did + subject_did + at) already in ledger for dedup
   const ledgerKeys = new Set(ledger.map(e => `${e.buyer_did}:${e.subject_did}:${e.at}`))
