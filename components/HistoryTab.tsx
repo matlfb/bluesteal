@@ -11,6 +11,8 @@ interface HistoryEvent {
   price: number
   at: string
   counterpart_handle?: string
+  subject_avatar?: string | null
+  counterpart_avatar?: string | null
 }
 
 export default function HistoryTab({ events }: { events: HistoryEvent[] }) {
@@ -40,6 +42,9 @@ export default function HistoryTab({ events }: { events: HistoryEvent[] }) {
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', fontWeight: 600, letterSpacing: '0.12em', padding: '2px 7px', background: isBought ? 'rgba(0,229,255,0.1)' : 'rgba(224,82,82,0.1)', color: isBought ? 'var(--brand)' : 'var(--danger)', border: `1px solid ${isBought ? 'rgba(0,229,255,0.2)' : 'rgba(224,82,82,0.2)'}` }}>
                     {isBought ? t('history_bought') : t('history_lost')}
                   </span>
+                  {ev.subject_avatar && (
+                    <img src={ev.subject_avatar} alt="" width={18} height={18} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                  )}
                   <Link href={'/profil/' + ev.subject_handle} style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--t1)', textDecoration: 'none', fontWeight: 500 }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--brand)' }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t1)' }}>
@@ -47,8 +52,11 @@ export default function HistoryTab({ events }: { events: HistoryEvent[] }) {
                   </Link>
                 </div>
                 {ev.counterpart_handle && (
-                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t3)' }}>
+                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t3)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     {isBought ? t('history_stolen_from') : t('history_stolen_by')}{' '}
+                    {ev.counterpart_avatar && (
+                      <img src={ev.counterpart_avatar} alt="" width={14} height={14} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                    )}
                     <Link href={'/profil/' + ev.counterpart_handle} style={{ color: 'var(--t2)', textDecoration: 'none' }}
                       onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t1)' }}
                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t2)' }}>
