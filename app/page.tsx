@@ -18,6 +18,7 @@ interface Card {
   followersCount: number
   owner: string | null
   price: number
+  verified?: boolean
 }
 
 function Carousel({ cards, loading, onCardClick, userDid, ownedDids }: { cards: Card[]; loading: boolean; onCardClick?: (card: Card) => void; userDid?: string; ownedDids?: Set<string> }) {
@@ -30,7 +31,7 @@ function Carousel({ cards, loading, onCardClick, userDid, ownedDids }: { cards: 
           ))
         : cards.map(card => (
             <Link key={card.did} href={`/profil/${card.handle}`} style={{ flexShrink: 0, width: 200, textDecoration: 'none', display: 'block' }}>
-              <ProfileCard handle={card.handle} displayName={card.displayName} avatar={card.avatar} followersCount={card.followersCount} price={card.price} owner={card.owner} onPillClick={onCardClick && userDid && !ownedDids?.has(card.did) && userDid !== card.did ? () => onCardClick(card) : undefined} />
+              <ProfileCard handle={card.handle} displayName={card.displayName} avatar={card.avatar} followersCount={card.followersCount} price={card.price} owner={card.owner} ownerHref={card.owner ? `/profil/${card.owner}` : null} verified={card.verified} onPillClick={onCardClick && userDid && !ownedDids?.has(card.did) && userDid !== card.did ? () => onCardClick(card) : undefined} />
             </Link>
           ))
       }
@@ -54,7 +55,7 @@ function CardGrid({ cards, loading, onCardClick, userDid, isMobile }: {
             ))
           : cards.map(card => (
               <Link key={card.did} href={`/profil/${card.handle}`} style={{ textDecoration: 'none', display: 'block', width: '100%', minWidth: 0 }}>
-                <ProfileCard handle={card.handle} displayName={card.displayName} avatar={card.avatar} followersCount={card.followersCount} price={card.price} owner={card.owner} onPillClick={onCardClick && userDid && userDid !== card.did ? () => onCardClick(card) : undefined} />
+                <ProfileCard handle={card.handle} displayName={card.displayName} avatar={card.avatar} followersCount={card.followersCount} price={card.price} owner={card.owner} ownerHref={card.owner ? `/profil/${card.owner}` : null} verified={card.verified} onPillClick={onCardClick && userDid && userDid !== card.did ? () => onCardClick(card) : undefined} />
               </Link>
             ))
         }
@@ -120,7 +121,7 @@ export default function HomePage() {
   useEffect(() => {
     fetch('/api/hot')
       .then(r => r.json())
-      .then(data => setHotCards((data.cards ?? []).map((c: any) => ({ did: c.did, handle: c.handle, displayName: c.displayName || c.handle, avatar: c.avatar, followersCount: c.followersCount, owner: c.owner_handle, price: c.value }))))
+      .then(data => setHotCards((data.cards ?? []).map((c: any) => ({ did: c.did, handle: c.handle, displayName: c.displayName || c.handle, avatar: c.avatar, followersCount: c.followersCount, owner: c.owner_handle, price: c.value, verified: c.verified }))))
       .catch(() => {})
       .finally(() => setHotLoading(false))
   }, [])
@@ -128,7 +129,7 @@ export default function HomePage() {
   useEffect(() => {
     fetch('/api/recent?limit=8')
       .then(r => r.json())
-      .then(data => setRecentCards((data.cards ?? []).map((c: any) => ({ did: c.subject_did, handle: c.handle, displayName: c.displayName || c.handle, avatar: c.avatar, followersCount: c.followersCount, owner: c.owner_handle, price: c.value ?? BASE_PRICE }))))
+      .then(data => setRecentCards((data.cards ?? []).map((c: any) => ({ did: c.subject_did, handle: c.handle, displayName: c.displayName || c.handle, avatar: c.avatar, followersCount: c.followersCount, owner: c.owner_handle, price: c.value ?? BASE_PRICE, verified: c.verified }))))
       .catch(() => {})
       .finally(() => setRecentLoading(false))
   }, [])
@@ -186,7 +187,7 @@ export default function HomePage() {
 
   if (authLoading) return null
 
-  const tabLabels = [t('home_tab_following'), 'Hot']
+  const tabLabels = ['Hot', t('home_tab_following')]
 
   return (
     <div>
@@ -213,19 +214,23 @@ export default function HomePage() {
 
       {user && (recentCards.length > 0 || recentLoading) && (
         <div style={{ padding: (isMobile || isTablet) ? 0 : '3.5rem 0 0' }}>
-          <SectionTitle isMobile={isMobile} isTablet={isTablet}>Collectés récemment</SectionTitle>
+          <SectionTitle isMobile={isMobile} isTablet={isTablet}>{t('home_recently_collected')}</SectionTitle>
           <Carousel cards={recentCards} loading={recentLoading} onCardClick={setModalCard} userDid={user.did} ownedDids={ownedDids} />
           <Divider />
         </div>
       )}
 
       {user && <div id="explorer" style={{ padding: isMobile ? '20px' : '3.5rem 0 4rem' }}>
-        <SectionTitle isMobile={isMobile} isTablet={isTablet} compact>Explorer</SectionTitle>
+        <SectionTitle isMobile={isMobile} isTablet={isTablet} compact>{t('home_explore')}</SectionTitle>
         <div style={{ maxWidth: isMobile ? 'none' : 1100, margin: isMobile ? 0 : '0 auto', padding: isMobile ? 0 : '0 2.5rem' }}>
           <SegmentedControl tabs={tabLabels} active={activeTab} onChange={setActiveTab} />
         </div>
 
         {activeTab === 0 && (
+          <CardGrid cards={hotCards} loading={hotLoading} onCardClick={user ? setModalCard : undefined} userDid={user?.did} isMobile={isMobile} />
+        )}
+
+        {activeTab === 1 && (
           !user ? (
             <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 2.5rem' }}>
               <div style={{ background: '#0f1318', padding: '2rem', border: '1px solid rgba(0,229,255,0.1)', maxWidth: 400, position: 'relative', overflow: 'hidden' }}>
@@ -242,10 +247,6 @@ export default function HomePage() {
           ) : (
             <CardGrid cards={friendCards} loading={friendLoading} onCardClick={user ? setModalCard : undefined} userDid={user?.did} isMobile={isMobile} />
           )
-        )}
-
-        {activeTab === 1 && (
-          <CardGrid cards={hotCards} loading={hotLoading} onCardClick={user ? setModalCard : undefined} userDid={user?.did} isMobile={isMobile} />
         )}
       </div>}
 

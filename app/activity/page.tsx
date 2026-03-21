@@ -231,7 +231,7 @@ function EventRow({ ev, profileCache, isFriendsTab, followingSet, isMineTab, myH
 export default function ActivityPage() {
   const { user } = useAuth()
   const { t } = useLang()
-  const [tab, setTab]                     = useState<Tab>('global')
+  const [tab, setTab]                     = useState<Tab>('mine')
   const [globalEvents, setGlobalEvents]   = useState<ActivityEvent[]>([])
   const [friendsEvents, setFriendsEvents] = useState<ActivityEvent[]>([])
   const [mineEvents, setMineEvents]       = useState<ActivityEvent[]>([])
@@ -376,9 +376,9 @@ export default function ActivityPage() {
   const isLoading = tab === 'friends' ? friendsLoading : tab === 'mine' ? mineLoading : loading
 
   const tabs: { id: Tab; label: string; badge?: number }[] = [
+    ...(user ? [{ id: 'mine' as Tab, label: t('activity_tab_you'), badge: unseenMine }] : []),
     { id: 'global',  label: t('activity_tab_everyone') },
     { id: 'friends', label: t('activity_tab_friends')  },
-    ...(user ? [{ id: 'mine' as Tab, label: t('activity_tab_you'), badge: unseenMine }] : []),
   ]
 
   return (

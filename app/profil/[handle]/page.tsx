@@ -22,6 +22,7 @@ interface FullProfile {
   followersCount: number
   followsCount: number
   postsCount: number
+  verified: boolean
 }
 
 interface OwnedCard {
@@ -30,6 +31,7 @@ interface OwnedCard {
   avatar: string | null
   followersCount: number
   value: number
+  purchased_at: string
 }
 
 interface HistoryEvent {
@@ -57,7 +59,7 @@ async function fetchOwnedCards(ownerDid: string): Promise<OwnedCard[]> {
   const res = await fetch(`/api/owned?owner_did=${encodeURIComponent(ownerDid)}`)
   if (!res.ok) return []
   const data = await res.json()
-  const owned: Array<{ subject_did: string; value: number }> = data.owned ?? []
+  const owned: Array<{ subject_did: string; value: number; purchased_at: string }> = data.owned ?? []
   if (owned.length === 0) return []
 
   const dids = owned.map(o => o.subject_did)
@@ -72,16 +74,19 @@ async function fetchOwnedCards(ownerDid: string): Promise<OwnedCard[]> {
     } catch {}
   }
 
-  return owned.map(o => {
-    const p = profileMap[o.subject_did]
-    return {
-      handle: p?.handle || o.subject_did,
-      displayName: p?.displayName || p?.handle || o.subject_did,
-      avatar: p?.avatar || null,
-      followersCount: p?.followersCount || 0,
-      value: o.value,
-    }
-  })
+  return owned
+    .sort((a, b) => b.purchased_at.localeCompare(a.purchased_at))
+    .map(o => {
+      const p = profileMap[o.subject_did]
+      return {
+        handle: p?.handle || o.subject_did,
+        displayName: p?.displayName || p?.handle || o.subject_did,
+        avatar: p?.avatar || null,
+        followersCount: p?.followersCount || 0,
+        value: o.value,
+        purchased_at: o.purchased_at,
+      }
+    })
 }
 
 export default function ProfilPage() {
@@ -123,7 +128,7 @@ export default function ProfilPage() {
         .then(r => { if (!r.ok) throw new Error('not found'); return r.json() }),
       fetch(`https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${actor}&limit=10&filter=posts_no_replies`)
         .then(r => r.json()).catch(() => ({ feed: [] })),
-    ]).then(([data, feedData]) => {
+    ]).then(async ([data, feedData]) => {
       const p: FullProfile = {
         did: data.did, handle: data.handle,
         displayName: data.displayName || data.handle,
@@ -132,7 +137,12 @@ export default function ProfilPage() {
         followersCount: data.followersCount || 0,
         followsCount: data.followsCount || 0,
         postsCount: data.postsCount || 0,
+        verified: data.verification?.verifiedStatus === 'valid',
       }
+      // Check blacklist before displaying
+      const bl = await fetch('/api/blacklist?did=' + encodeURIComponent(data.did)).then(r => r.json()).catch(() => ({ blacklisted: false }))
+      if (bl.blacklisted) { setNotFound(true); return }
+
       setProfile(p)
 
       // Fetch current owner from backend
@@ -315,8 +325,14 @@ export default function ProfilPage() {
               <div className='profile-meta'>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.2rem' }}>
-                    <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '2.8rem', lineHeight: 1.05, color: '#e8e6dc' }}>
+                    <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '2.8rem', lineHeight: 1.05, color: '#e8e6dc', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                       {profile.displayName}
+                      {profile.verified && (
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }} aria-label="Verified">
+                          <circle cx="12" cy="12" r="12" fill="#0085ff"/>
+                          <path d="M7 12.5l3.5 3.5 6.5-7" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      )}
                     </h1>
                     <a
                       href={`https://bsky.app/profile/${profile.handle}`}
@@ -354,7 +370,7 @@ export default function ProfilPage() {
                       onMouseEnter={e => { if (!isOwned && !isOwnProfile && !stolen && !stealing) (e.currentTarget as HTMLElement).style.background = '#00e5ff' }}
                       onMouseLeave={e => { if (!isOwned && !isOwnProfile && !stolen && !stealing) (e.currentTarget as HTMLElement).style.background = '#00b4d8' }}
                     >
-                      {isOwnProfile ? t('profil_your_card') : (isOwned || stolen) ? t('profil_owned') : stealing ? t('profil_stealing') : currentOwner ? t('profil_steal_owner', { owner: currentOwner.owner_handle, price: fmtNum(cardValue ?? BASE_PRICE) }) : t('profil_steal_noowner', { price: fmtNum(cardValue ?? BASE_PRICE) })}
+                      {isOwnProfile ? `${t('profil_your_card')} — ${fmtNum(cardValue ?? BASE_PRICE)} J` : (isOwned || stolen) ? `${t('profil_owned')} — ${fmtNum(cardValue ?? BASE_PRICE)} J` : stealing ? t('profil_stealing') : currentOwner ? t('profil_steal_owner', { owner: currentOwner.owner_handle, price: fmtNum(cardValue ?? BASE_PRICE) }) : t('profil_steal_noowner', { price: fmtNum(cardValue ?? BASE_PRICE) })}
                     </button>
                   ) : (
                     <Link href="/login" style={{
@@ -454,25 +470,25 @@ export default function ProfilPage() {
                       followersCount={card.followersCount}
                       price={card.value}
                       owner={profile.handle}
+                      ownerHref={`/profil/${profile.handle}`}
+                      onPillClick={() => { window.location.href = `/profil/${card.handle}` }}
                     />
                   </Link>
                 ))}
-                <div
-                  style={{
-                    aspectRatio: '4/5',
-                    border: '1px dashed rgba(0,229,255,0.12)',
-                    display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
-                    cursor: 'pointer', transition: 'border-color 0.2s, background 0.2s',
-                  }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.3)'; (e.currentTarget as HTMLElement).style.background = 'rgba(0,229,255,0.02)' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.12)'; (e.currentTarget as HTMLElement).style.background = 'transparent' }}
-                >
-                  <Link href="/" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
-                    <span style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem', color: 'var(--t4)', fontStyle: 'italic' }}>+</span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--t4)', letterSpacing: '0.2em' }}>{t('account_explore_label')}</span>
-                  </Link>
-                </div>
+                <Link href="/" style={{ textDecoration: 'none', display: 'block', width: '100%', minWidth: 0 }}>
+                  <div
+                    style={{ border: '1px dashed rgba(0,229,255,0.12)', cursor: 'pointer', transition: 'border-color 0.2s, background 0.2s', position: 'relative' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.3)'; (e.currentTarget as HTMLElement).style.background = 'rgba(0,229,255,0.02)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.12)'; (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                  >
+                    <div style={{ aspectRatio: '3/4' }} />
+                    <div style={{ height: '88px' }} />
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
+                      <span style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem', color: 'var(--t4)', fontStyle: 'italic' }}>+</span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--t4)', letterSpacing: '0.2em' }}>{t('account_explore_label')}</span>
+                    </div>
+                  </div>
+                </Link>
               </div>
             ) : (
               <div style={{ padding: '4rem 2rem', textAlign: 'center', border: '1px dashed rgba(0,229,255,0.1)' }}>
@@ -492,7 +508,7 @@ export default function ProfilPage() {
 
         {/* ACTIVITÉ BSKY */}
         {tab === 'posts' && (
-          <div style={{ maxWidth: 680 }}>
+          <div style={{ maxWidth: 1020 }}>
             {posts.length === 0 && (
               <p style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--t3)', padding: '2rem 0' }}>{t('profil_no_posts')}</p>
             )}

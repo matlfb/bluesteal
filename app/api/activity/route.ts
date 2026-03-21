@@ -10,19 +10,17 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(parseInt(req.nextUrl.searchParams.get('limit') ?? '60'), 100)
 
   if (type === 'friends') {
-    const raw  = req.nextUrl.searchParams.get('dids') ?? ''
-    const dids = raw.split(',').map(d => d.trim()).filter(Boolean)
-    return NextResponse.json({ events: filterBlacklisted(getFriendsActivity(dids, limit * 2)).slice(0, limit) })
+    const dids = (req.nextUrl.searchParams.get('dids') ?? '').split(',').map(d => d.trim()).filter(Boolean)
+    return NextResponse.json({ events: await filterBlacklisted(await getFriendsActivity(dids, limit * 2)).then(r => r.slice(0, limit)) })
   }
 
   if (type === 'mine') {
     const sessionToken = req.cookies.get('bs_session')?.value
     const session_did = sessionToken ? verifySession(sessionToken) : null
     if (!session_did) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
     const handle = req.nextUrl.searchParams.get('handle') ?? ''
-    return NextResponse.json({ events: getUserActivity(session_did, handle, limit) })
+    return NextResponse.json({ events: await getUserActivity(session_did, handle, limit) })
   }
 
-  return NextResponse.json({ events: filterBlacklisted(getGlobalActivity(limit * 2)).slice(0, limit) })
+  return NextResponse.json({ events: (await filterBlacklisted(await getGlobalActivity(limit * 2))).slice(0, limit) })
 }

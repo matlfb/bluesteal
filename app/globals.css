@@ -123,6 +123,14 @@ body::before {
 
 /* ── Navbar responsive (mobile-first) ── */
 
+.nav-top {
+  padding: 0 20px;
+}
+
+@media (min-width: 1024px) {
+  .nav-top { padding: 0 2.5rem; }
+}
+
 /* Bottom nav: visible by default (mobile) */
 .nav-bottom {
   display: flex;

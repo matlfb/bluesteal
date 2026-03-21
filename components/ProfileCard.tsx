@@ -11,10 +11,12 @@ export interface CardProps {
   price: number
   priceChange?: number
   owner?: string | null
+  ownerHref?: string | null
+  verified?: boolean
   onPillClick?: (e: React.MouseEvent) => void
 }
 
-export default function ProfileCard({ handle, displayName, avatar, followersCount, price, priceChange = 0, owner, onPillClick }: CardProps) {
+export default function ProfileCard({ handle, displayName, avatar, followersCount, price, priceChange = 0, owner, ownerHref, verified, onPillClick }: CardProps) {
   const [hovered, setHovered] = useState(false)
   const [ownerAvatar, setOwnerAvatar] = useState<string | null>(null)
   const { t, fmtNum } = useLang()
@@ -26,6 +28,16 @@ export default function ProfileCard({ handle, displayName, avatar, followersCoun
       .then(data => setOwnerAvatar(data.avatar ?? null))
       .catch(() => {})
   }, [owner])
+
+  const ownerContent = (
+    <>
+      <span style={{ color: 'var(--t4)' }}>&#8627;</span>
+      {ownerAvatar && (
+        <img src={ownerAvatar} alt={owner ?? ''} style={{ width: 14, height: 14, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+      )}
+      {owner || ''}
+    </>
+  )
 
   return (
     <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} style={{ position: 'relative', background: 'var(--surface)', cursor: 'pointer', overflow: 'hidden', transition: 'background 0.2s', userSelect: 'none', width: '100%' }}>
@@ -54,14 +66,28 @@ export default function ProfileCard({ handle, displayName, avatar, followersCoun
         </div>
       </div>
       <div style={{ padding: '12px', height: '88px', overflow: 'hidden', boxSizing: 'border-box' }}>
-        <div style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', fontWeight: 600, color: 'var(--t1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '2px' }}>{displayName}</div>
+        <div style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', fontWeight: 600, color: 'var(--t1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayName}</span>
+          {verified && (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }} aria-label="Verified">
+              <circle cx="12" cy="12" r="12" fill="#0085ff"/>
+              <path d="M7 12.5l3.5 3.5 6.5-7" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
+        </div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: '6px' }}>@{handle}</div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', visibility: owner ? 'visible' : 'hidden', display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <span style={{ color: 'var(--t4)' }}>&#8627;</span>
-          {ownerAvatar && (
-            <img src={ownerAvatar} alt={owner ?? ''} style={{ width: 14, height: 14, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-          )}
-          {owner || ''}
+          {ownerHref ? (
+            <a
+              href={ownerHref}
+              onClick={e => e.stopPropagation()}
+              style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'inherit', textDecoration: 'none' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--brand)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'inherit')}
+            >
+              {ownerContent}
+            </a>
+          ) : ownerContent}
         </div>
       </div>
     </div>

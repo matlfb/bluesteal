@@ -1,8 +1,4 @@
-import fs from 'fs'
-import path from 'path'
-
-const FILE = path.join(process.cwd(), 'data', 'activity.json')
-const MAX_EVENTS = 500
+import { redis } from './redis'
 
 export interface ActivityEvent {
   buyer_did: string
@@ -14,37 +10,35 @@ export interface ActivityEvent {
   at: string
 }
 
-function read(): ActivityEvent[] {
-  try {
-    if (!fs.existsSync(FILE)) return []
-    return JSON.parse(fs.readFileSync(FILE, 'utf-8'))
-  } catch { return [] }
+function parse(item: unknown): ActivityEvent {
+  return typeof item === 'string' ? JSON.parse(item) : item as ActivityEvent
 }
 
-function write(events: ActivityEvent[]) {
-  fs.mkdirSync(path.dirname(FILE), { recursive: true })
-  fs.writeFileSync(FILE, JSON.stringify(events, null, 2))
+export async function addActivity(event: ActivityEvent): Promise<void> {
+  const pipe = redis.pipeline()
+  pipe.lpush('activity:global', JSON.stringify(event))
+  pipe.ltrim('activity:global', 0, 499)
+  await pipe.exec()
 }
 
-export function addActivity(event: ActivityEvent) {
-  const events = read()
-  events.unshift(event)
-  write(events.slice(0, MAX_EVENTS))
+export async function getGlobalActivity(limit = 50): Promise<ActivityEvent[]> {
+  const items = await redis.lrange('activity:global', 0, limit - 1)
+  return items.map(parse)
 }
 
-export function getGlobalActivity(limit = 50): ActivityEvent[] {
-  return read().slice(0, limit)
-}
-
-export function getFriendsActivity(dids: string[], limit = 50): ActivityEvent[] {
+export async function getFriendsActivity(dids: string[], limit = 50): Promise<ActivityEvent[]> {
   const set = new Set(dids)
-  return read()
+  const all = await redis.lrange('activity:global', 0, 499)
+  return all
+    .map(parse)
     .filter(e => set.has(e.buyer_did) || set.has(e.subject_did))
     .slice(0, limit)
 }
 
-export function getUserActivity(did: string, handle: string, limit = 50): ActivityEvent[] {
-  return read()
+export async function getUserActivity(did: string, handle: string, limit = 50): Promise<ActivityEvent[]> {
+  const all = await redis.lrange('activity:global', 0, 499)
+  return all
+    .map(parse)
     .filter(e => e.buyer_did === did || e.prev_owner_handle === handle)
     .slice(0, limit)
 }

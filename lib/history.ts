@@ -1,7 +1,4 @@
-import fs from 'fs'
-import path from 'path'
-
-const FILE = path.join(process.cwd(), 'data', 'history.json')
+import { redis } from './redis'
 
 export interface HistoryEvent {
   type: 'bought' | 'lost'
@@ -13,27 +10,23 @@ export interface HistoryEvent {
   counterpart_handle?: string
 }
 
-type Store = Record<string, HistoryEvent[]>
-
-function read(): Store {
-  try {
-    if (!fs.existsSync(FILE)) return {}
-    return JSON.parse(fs.readFileSync(FILE, 'utf-8'))
-  } catch { return {} }
+export async function addEvent(event: HistoryEvent): Promise<void> {
+  const pipe = redis.pipeline()
+  pipe.lpush(`history:${event.actor_did}`, JSON.stringify(event))
+  pipe.ltrim(`history:${event.actor_did}`, 0, 499)
+  if (event.type === 'bought') {
+    pipe.hincrby('steals:all', event.actor_did, 1)
+  }
+  await pipe.exec()
 }
 
-function write(s: Store) {
-  fs.mkdirSync(path.dirname(FILE), { recursive: true })
-  fs.writeFileSync(FILE, JSON.stringify(s, null, 2))
+export async function getHistory(did: string): Promise<HistoryEvent[]> {
+  const items = await redis.lrange(`history:${did}`, 0, 499)
+  return items.map(item => typeof item === 'string' ? JSON.parse(item) : item as HistoryEvent)
 }
 
-export function addEvent(event: HistoryEvent) {
-  const s = read()
-  if (!s[event.actor_did]) s[event.actor_did] = []
-  s[event.actor_did].unshift(event)
-  write(s)
-}
-
-export function getHistory(did: string): HistoryEvent[] {
-  return read()[did] ?? []
+export async function getAllSteals(): Promise<Record<string, number>> {
+  const hash = await redis.hgetall('steals:all')
+  if (!hash) return {}
+  return Object.fromEntries(Object.entries(hash).map(([k, v]) => [k, Number(v)]))
 }

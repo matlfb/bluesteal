@@ -12,37 +12,24 @@ export const runtime = 'nodejs'
 export async function GET(req: NextRequest) {
   const subject = req.nextUrl.searchParams.get('subject')
   if (!subject) return NextResponse.json(null)
-  const owner = getOwner(subject)
-  const value = getValue(subject)
+  const [owner, value] = await Promise.all([getOwner(subject), getValue(subject)])
   return NextResponse.json(owner ? { ...owner, value } : { value })
 }
 
 export async function POST(req: NextRequest) {
-  // 1. Verify session cookie — DID must come from the server-signed cookie, not the body
   const sessionToken = req.cookies.get('bs_session')?.value
   const owner_did = sessionToken ? verifySession(sessionToken) : null
-  if (!owner_did) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  if (!owner_did) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // 2. Rate limit: max 20 purchases per minute per DID
-  if (!rateLimit(`own:${owner_did}`, 20, 60_000)) {
+  if (!await rateLimit(`own:${owner_did}`, 20, 60_000)) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
   const body = await req.json()
   const { subject_did, subject_handle } = body
+  if (!subject_did) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  if (subject_did === owner_did) return NextResponse.json({ error: 'Cannot buy your own card' }, { status: 400 })
 
-  if (!subject_did) {
-    return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
-  }
-
-  // 3. Prevent buying your own card (the card representing yourself)
-  if (subject_did === owner_did) {
-    return NextResponse.json({ error: 'Cannot buy your own card' }, { status: 400 })
-  }
-
-  // 4. Resolve owner_handle server-side — never trust client-provided handle
   let owner_handle: string = owner_did
   try {
     const res = await fetch(
@@ -53,20 +40,19 @@ export async function POST(req: NextRequest) {
       const data = await res.json()
       if (data.handle) owner_handle = data.handle
     }
-  } catch { /* fallback to DID */ }
+  } catch {}
 
-  const price = getValue(subject_did)
-  const ok = debitBalance(owner_did, owner_handle, price)
+  const price = await getValue(subject_did)
+  const ok = await debitBalance(owner_did, owner_handle, price)
   if (!ok) {
-    return NextResponse.json({ error: 'Insufficient balance', balance: getBalance(owner_did) }, { status: 402 })
+    return NextResponse.json({ error: 'Insufficient balance', balance: await getBalance(owner_did) }, { status: 402 })
   }
 
-  const prevOwner = getOwner(subject_did)
-  // 5. Always use server time — never trust client-provided purchased_at
+  const prevOwner = await getOwner(subject_did)
   const now = new Date().toISOString()
 
   if (prevOwner && prevOwner.owner_did !== owner_did) {
-    addEvent({
+    await addEvent({
       type: 'lost',
       actor_did: prevOwner.owner_did,
       subject_did,
@@ -77,28 +63,28 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const newValue = appreciateValue(subject_did)
-  setOwner({ subject_did, owner_did, owner_handle, purchased_at: now })
+  const [newValue] = await Promise.all([
+    appreciateValue(subject_did),
+    setOwner({ subject_did, owner_did, owner_handle, purchased_at: now }),
+    addEvent({
+      type: 'bought',
+      actor_did: owner_did,
+      subject_did,
+      subject_handle: subject_handle ?? subject_did,
+      price,
+      at: now,
+      counterpart_handle: prevOwner?.owner_handle,
+    }),
+    addActivity({
+      buyer_did: owner_did,
+      buyer_handle: owner_handle,
+      subject_did,
+      subject_handle: subject_handle ?? subject_did,
+      prev_owner_handle: prevOwner?.owner_handle,
+      price,
+      at: now,
+    }),
+  ])
 
-  addEvent({
-    type: 'bought',
-    actor_did: owner_did,
-    subject_did,
-    subject_handle: subject_handle ?? subject_did,
-    price,
-    at: now,
-    counterpart_handle: prevOwner?.owner_handle,
-  })
-
-  addActivity({
-    buyer_did: owner_did,
-    buyer_handle: owner_handle,
-    subject_did,
-    subject_handle: subject_handle ?? subject_did,
-    prev_owner_handle: prevOwner?.owner_handle,
-    price,
-    at: now,
-  })
-
-  return NextResponse.json({ ok: true, newValue, balance: getBalance(owner_did) })
+  return NextResponse.json({ ok: true, newValue, balance: await getBalance(owner_did) })
 }

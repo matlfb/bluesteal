@@ -24,7 +24,7 @@ export default function JetonsPage() {
       .then(data => {
         const owned: Array<{ value: number }> = data.owned ?? []
         setCardCount(owned.length)
-        const income = owned.reduce((sum, c) => sum + Math.round(c.value * 0.05), 0)
+        const income = owned.reduce((sum, c) => sum + (c.value > 600 ? Math.round(c.value * 0.015) : 0), 0)
         setHourlyIncome(income)
       })
       .catch(() => {})

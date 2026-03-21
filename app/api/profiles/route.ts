@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchProfiles, calcPrice, calcPriceChange } from '@/lib/bsky'
+import { isBlacklisted } from '@/lib/blacklist'
 
 export async function GET(req: NextRequest) {
   const handles = req.nextUrl.searchParams.getAll('actors')
@@ -9,11 +10,13 @@ export async function GET(req: NextRequest) {
 
   try {
     const profiles = await fetchProfiles(handles.slice(0, 25))
-    const cards = profiles.map(p => ({
-      ...p,
-      price: calcPrice(p.followersCount),
-      priceChange: calcPriceChange(),
-    }))
+    const cards = profiles
+      .filter(p => !isBlacklisted(p.did))
+      .map(p => ({
+        ...p,
+        price: calcPrice(p.followersCount),
+        priceChange: calcPriceChange(),
+      }))
     return NextResponse.json({ cards }, {
       headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=60' }
     })

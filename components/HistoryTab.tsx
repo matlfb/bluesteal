@@ -26,7 +26,7 @@ export default function HistoryTab({ events }: { events: HistoryEvent[] }) {
   }
 
   return (
-    <div style={{ maxWidth: 680 }}>
+    <div style={{ maxWidth: 1020 }}>
       <div style={{ borderTop: '1px solid rgba(0,229,255,0.08)' }}>
         {events.map((ev, i) => {
           const isBought = ev.type === 'bought'

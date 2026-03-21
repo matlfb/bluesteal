@@ -149,7 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser({ did, handle: did })
     }
 
-    fetch('/api/session', {
+    await fetch('/api/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ did, handle }),
@@ -186,7 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (session) {
       try { await session.signOut() } catch {}
     }
-    fetch('/api/session', { method: 'DELETE' }).catch(() => {})
+    await fetch('/api/session', { method: 'DELETE' }).catch(() => {})
     setUser(null)
     setSession(null)
     setOwnedDids(new Set())

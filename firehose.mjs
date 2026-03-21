@@ -1,149 +1,150 @@
 import { setDefaultResultOrder } from 'dns'
 setDefaultResultOrder('ipv4first')
 import WebSocket from 'ws'
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const OWNERSHIPS_FILE  = path.join(__dirname, 'data', 'ownerships.json')
-const OWNERSHIPS_LOCK  = OWNERSHIPS_FILE + '.lock'
-const BALANCES_FILE    = path.join(__dirname, 'data', 'balances.json')
-const BALANCES_LOCK    = BALANCES_FILE + '.lock'
-const CARD_VALUES_FILE = path.join(__dirname, 'data', 'card_values.json')
+const REDIS_URL   = process.env.UPSTASH_REDIS_REST_URL
+const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN
+
+if (!REDIS_URL || !REDIS_TOKEN) {
+  console.error('Missing UPSTASH_REDIS_REST_URL or UPSTASH_REDIS_REST_TOKEN')
+  process.exit(1)
+}
+
 const JETSTREAM = 'wss://jetstream2.us-east.bsky.network/subscribe?wantedCollections=blue.steal.card'
-
 const BASE_VALUE              = 1500
 const MIN_VALUE               = 600
 const STARTING_BALANCE        = 25000
-const INCOME_RATE             = 0.03
+const INCOME_RATE             = 0.015
 const OWNED_DEPRECIATION_RATE = 0.005
-const APPRECIATE_FACTOR       = 1.2
+const DID_RE                  = /^did:[a-z]+:[a-zA-Z0-9._:%-]+$/
 
-// ── File lock helpers ────────────────────────────────────────────────────────
+// ── Redis helpers ─────────────────────────────────────────────────────────────
 
-function acquireLock(lockFile, timeout = 5000) {
-  const start = Date.now()
-  while (true) {
-    try {
-      const fd = fs.openSync(lockFile, 'wx')
-      return fd
-    } catch {
-      if (Date.now() - start > timeout) throw new Error(`lock timeout: ${lockFile}`)
-      const until = Date.now() + 5
-      while (Date.now() < until) {}
-    }
+async function redis(cmd, ...args) {
+  const res = await fetch(`${REDIS_URL}/${cmd}/${args.map(encodeURIComponent).join('/')}`, {
+    headers: { Authorization: `Bearer ${REDIS_TOKEN}` },
+  })
+  const data = await res.json()
+  return data.result
+}
+
+async function redisPipeline(commands) {
+  const res = await fetch(`${REDIS_URL}/pipeline`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${REDIS_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(commands),
+  })
+  return res.json()
+}
+
+// ── Data helpers ──────────────────────────────────────────────────────────────
+
+async function getBalance(did) {
+  const val = await redis('get', `balance:${did}`)
+  if (!val) return STARTING_BALANCE
+  return (typeof val === 'string' ? JSON.parse(val) : val).balance ?? STARTING_BALANCE
+}
+
+async function setBalance(did, handle, balance) {
+  await redis('set', `balance:${did}`, JSON.stringify({ handle, balance }))
+}
+
+async function debitBalance(did, handle, amount) {
+  const current = await getBalance(did)
+  if (current < amount) return false
+  await setBalance(did, handle, current - amount)
+  return true
+}
+
+async function creditBalance(did, handle, amount) {
+  const current = await getBalance(did)
+  await setBalance(did, handle, current + amount)
+}
+
+async function getValue(did) {
+  const val = await redis('hget', 'card_values:all', did)
+  return val ? Number(val) : BASE_VALUE
+}
+
+async function setValue(did, value) {
+  const res = await fetch(`${REDIS_URL}/pipeline`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${REDIS_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify([
+      ['hset', 'card_values:all', did, String(value)],
+      ['zadd', 'cards:by_value', String(value), did],
+    ]),
+  })
+  await res.json()
+}
+
+async function setOwnership(o) {
+  const json = JSON.stringify(o)
+  const prev = await redis('get', `ownership:${o.subject_did}`)
+  const prevOwner = prev ? (typeof prev === 'string' ? JSON.parse(prev) : prev) : null
+
+  const cmds = [
+    ['set', `ownership:${o.subject_did}`, json],
+    ['hset', 'ownerships:all', o.subject_did, json],
+    ['sadd', `owner:${o.owner_did}:cards`, o.subject_did],
+    ['lpush', 'ownerships:recent', json],
+    ['ltrim', 'ownerships:recent', '0', '49'],
+  ]
+  if (prevOwner && prevOwner.owner_did !== o.owner_did) {
+    cmds.push(['srem', `owner:${prevOwner.owner_did}:cards`, o.subject_did])
   }
+
+  await fetch(`${REDIS_URL}/pipeline`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${REDIS_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(cmds),
+  })
 }
 
-function releaseLock(fd, lockFile) {
-  try { fs.closeSync(fd) } catch {}
-  try { fs.unlinkSync(lockFile) } catch {}
-}
-
-// ── Storage helpers ──────────────────────────────────────────────────────────
-
-function readJSON(file) {
-  try { return JSON.parse(fs.readFileSync(file, 'utf-8')) } catch { return {} }
-}
-
-function writeAtomic(file, data) {
-  fs.mkdirSync(path.dirname(file), { recursive: true })
-  const tmp = file + '.tmp'
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2))
-  fs.renameSync(tmp, file)
-}
-
-function getOwnerships() { return readJSON(OWNERSHIPS_FILE) }
-
-function setOwnership({ subject_did, owner_did, owner_handle, purchased_at }) {
-  const fd = acquireLock(OWNERSHIPS_LOCK)
-  try {
-    const s = readJSON(OWNERSHIPS_FILE)
-    s[subject_did] = { subject_did, owner_did, owner_handle, purchased_at }
-    writeAtomic(OWNERSHIPS_FILE, s)
-    console.log(`[own] ${owner_handle} → ${subject_did}`)
-  } finally {
-    releaseLock(fd, OWNERSHIPS_LOCK)
+async function getAllOwnerships() {
+  const hash = await redis('hgetall', 'ownerships:all')
+  if (!hash || !Array.isArray(hash)) return {}
+  const result = {}
+  for (let i = 0; i < hash.length; i += 2) {
+    result[hash[i]] = typeof hash[i+1] === 'string' ? JSON.parse(hash[i+1]) : hash[i+1]
   }
+  return result
 }
-
-function getValue(did) { return readJSON(CARD_VALUES_FILE)[did] ?? BASE_VALUE }
-
-function setValue(did, val) {
-  const s = readJSON(CARD_VALUES_FILE)
-  s[did] = Math.max(100, Math.round(val))
-  writeAtomic(CARD_VALUES_FILE, s)
-}
-
-function getBalance(did) { return readJSON(BALANCES_FILE)[did]?.balance ?? STARTING_BALANCE }
-
-function creditBalance(did, handle, amount) {
-  const fd = acquireLock(BALANCES_LOCK)
-  try {
-    const s = readJSON(BALANCES_FILE)
-    s[did] = { handle, balance: (s[did]?.balance ?? STARTING_BALANCE) + amount }
-    writeAtomic(BALANCES_FILE, s)
-  } finally {
-    releaseLock(fd, BALANCES_LOCK)
-  }
-}
-
-function debitBalance(did, handle, amount) {
-  const fd = acquireLock(BALANCES_LOCK)
-  try {
-    const s = readJSON(BALANCES_FILE)
-    const current = s[did]?.balance ?? STARTING_BALANCE
-    if (current < amount) return false
-    s[did] = { handle, balance: current - amount }
-    writeAtomic(BALANCES_FILE, s)
-    return true
-  } finally {
-    releaseLock(fd, BALANCES_LOCK)
-  }
-}
-
-// ── Resolve DID → handle ─────────────────────────────────────────────────────
-
-const DID_RE = /^did:[a-z]+:[a-zA-Z0-9._:%-]+$/
 
 async function resolveHandle(did) {
   try {
-    const res = await fetch(
-      `https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(did)}`,
-      { signal: AbortSignal.timeout(5000) }
-    )
-    const data = await res.json()
-    return data.handle ?? did
-  } catch { return did }
+    const res = await fetch(`https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(did)}`, { signal: AbortSignal.timeout(5000) })
+    if (res.ok) { const d = await res.json(); return d.handle || did }
+  } catch {}
+  return did
 }
 
-// ── Hourly cron ──────────────────────────────────────────────────────────────
+// ── Hourly cron ───────────────────────────────────────────────────────────────
 
 async function runHourly() {
   console.log('[cron] hourly run starting...')
-  const ownerships = getOwnerships()
+  const ownerships = await getAllOwnerships()
 
   for (const [subject_did, o] of Object.entries(ownerships)) {
-    const oldVal = getValue(subject_did)
+    const oldVal = await getValue(subject_did)
     const newVal = Math.max(MIN_VALUE, Math.round(oldVal * (1 - OWNED_DEPRECIATION_RATE)))
     if (newVal !== oldVal) {
-      setValue(subject_did, newVal)
-      console.log(`[cron] depreciate owned ${subject_did}: ${oldVal}J → ${newVal}J`)
+      await setValue(subject_did, newVal)
+      console.log(`[cron] depreciate ${subject_did}: ${oldVal}J → ${newVal}J`)
     }
     if (newVal <= MIN_VALUE) continue
     const income = Math.round(newVal * INCOME_RATE)
-    creditBalance(o.owner_did, o.owner_handle, income)
-    console.log(`[cron] +${income}J → ${o.owner_handle} (owns ${subject_did}, value=${newVal}J)`)
+    await creditBalance(o.owner_did, o.owner_handle, income)
+    console.log(`[cron] +${income}J → ${o.owner_handle}`)
   }
 
   console.log('[cron] done')
 }
 
-// ── Firehose ─────────────────────────────────────────────────────────────────
+// ── Firehose ──────────────────────────────────────────────────────────────────
 
 function connect() {
-  console.log('[firehose] connecting to Jetstream...')
+  console.log('[firehose] connecting...')
   const ws = new WebSocket(JETSTREAM)
 
   ws.on('open', () => console.log('[firehose] connected'))
@@ -156,44 +157,31 @@ function connect() {
       const record = event.commit.record
       if (!record?.subject?.did) return
 
-      // Validate DIDs from external source
       const owner_did   = event.did
       const subject_did = record.subject.did
       if (!DID_RE.test(owner_did) || !DID_RE.test(subject_did)) return
-
-      // Prevent self-ownership
       if (owner_did === subject_did) return
 
-      resolveHandle(owner_did).then(owner_handle => {
-        const price = getValue(subject_did)
-
-        // Check and deduct balance — reject event if insufficient funds
-        const ok = debitBalance(owner_did, owner_handle, price)
+      resolveHandle(owner_did).then(async owner_handle => {
+        const price = await getValue(subject_did)
+        const ok = await debitBalance(owner_did, owner_handle, price)
         if (!ok) {
-          console.log(`[firehose] rejected: ${owner_handle} has insufficient balance for ${subject_did} (price=${price})`)
+          console.log(`[firehose] rejected: ${owner_handle} insufficient balance (price=${price})`)
           return
         }
-
-        // Appreciate card value on steal
-        const newValue = Math.round(getValue(subject_did) * APPRECIATE_FACTOR)
-        setValue(subject_did, newValue)
-
-        // Always use server time — never trust purchasedAt from the external record
+        const newValue = Math.round((await getValue(subject_did)) * 1.2)
+        await setValue(subject_did, newValue)
         const now = new Date().toISOString()
-        setOwnership({ subject_did, owner_did, owner_handle, purchased_at: now })
-      })
-    } catch { /* ignore malformed events */ }
+        await setOwnership({ subject_did, owner_did, owner_handle, purchased_at: now })
+        console.log(`[firehose] ${owner_handle} acquired ${subject_did} for ${price}J`)
+      }).catch(console.error)
+    } catch {}
   })
 
-  ws.on('close', () => {
-    console.log('[firehose] disconnected — reconnect in 5s')
-    setTimeout(connect, 5000)
-  })
-  ws.on('error', (err) => console.error('[firehose] error:', err.message))
+  ws.on('close', () => { console.log('[firehose] disconnected — reconnect in 5s'); setTimeout(connect, 5000) })
+  ws.on('error', err => console.error('[firehose] error:', err.message))
 }
 
 connect()
-
-// Run cron now (after 3s) then every hour
 setTimeout(runHourly, 3000)
 setInterval(runHourly, 60 * 60 * 1000)

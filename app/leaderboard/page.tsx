@@ -1,121 +1,168 @@
-"use client"
+'use client'
+
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useLang } from '@/context/LangContext'
 
-const players = [
-  { rank: 1,  name: 'mathieu',  handle: 'mathieu.bsky.social',  cards: 23, value: 284500, gain: 12.4, steals: 45 },
-  { rank: 2,  name: 'alex',     handle: 'alex.bsky.social',     cards: 18, value: 198200, gain: 8.1,  steals: 32 },
-  { rank: 3,  name: 'sophie',   handle: 'sophie.bsky.social',   cards: 21, value: 176400, gain: -2.3, steals: 28 },
-  { rank: 4,  name: 'theo',     handle: 'theo.bsky.social',     cards: 15, value: 142800, gain: 5.6,  steals: 21 },
-  { rank: 5,  name: 'emma',     handle: 'emma.bsky.social',     cards: 12, value: 118600, gain: 3.2,  steals: 18 },
-  { rank: 6,  name: 'lucas',    handle: 'lucas.bsky.social',    cards: 9,  value: 94200,  gain: -1.1, steals: 14 },
-  { rank: 7,  name: 'pauline',  handle: 'pauline.bsky.social',  cards: 11, value: 87500,  gain: 6.8,  steals: 16 },
-  { rank: 8,  name: 'marc',     handle: 'marc.bsky.social',     cards: 7,  value: 65300,  gain: 0.4,  steals: 10 },
-  { rank: 9,  name: 'remi',     handle: 'remi.bsky.social',     cards: 6,  value: 58400,  gain: 2.1,  steals: 9  },
-  { rank: 10, name: 'claire',   handle: 'claire.bsky.social',   cards: 5,  value: 42100,  gain: -0.8, steals: 7  },
-]
+interface Player {
+  rank: number
+  did: string
+  handle: string
+  displayName: string
+  avatar: string | null
+  cards: number
+  portfolio: number
+  steals: number
+}
 
 export default function LeaderboardPage() {
   const { t, fmtNum } = useLang()
+  const [players, setPlayers] = useState<Player[]>([])
+  const [loading, setLoading] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/leaderboard')
+      .then(r => r.json())
+      .then(data => setPlayers(data.players ?? []))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  const rankColors = ['#f5c842', '#9ba3af', '#c07830']
+
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '4rem 2.5rem' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: isMobile ? '2rem 1.25rem 6rem' : '4rem 2.5rem' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '1.5rem', marginBottom: '3rem' }}>
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#00e5ff', letterSpacing: '0.2em' }}>01</span>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '3.2rem', fontWeight: 400, color: '#e8e6dc' }}>
+      <div style={{ marginBottom: isMobile ? '2rem' : '3rem' }}>
+        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: isMobile ? '2rem' : '2.4rem', fontWeight: 400, color: '#e8e6dc' }}>
           {t('lb_title')}
         </h1>
-        <div style={{ flex: 1, height: 1, background: 'rgba(0,229,255,0.1)', marginLeft: 'auto', maxWidth: 200 }} />
-        <div style={{ display: 'flex', gap: 0, fontFamily: 'var(--font-mono)', fontSize: '11px', border: '1px solid rgba(0,229,255,0.15)' }}>
-          {[t('lb_tab_global'), t('lb_tab_friends')].map((t, i) => (
-            <button key={t} style={{
-              padding: '0.3rem 0.8rem',
-              background: i === 0 ? 'rgba(0,229,255,0.1)' : 'none',
-              color: i === 0 ? '#00e5ff' : 'var(--t3)',
-              border: 'none',
-              cursor: 'pointer',
-              fontFamily: 'var(--font-mono)',
-              fontSize: '11px',
-              letterSpacing: '0.1em',
-            }}>{t}</button>
+      </div>
+
+      {loading && (
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1rem', marginBottom: '3rem' }}>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} style={{ background: '#0f1318', height: 180, opacity: 0.5, animation: 'pulse 1.5s infinite' }} />
           ))}
         </div>
-      </div>
+      )}
 
       {/* Top 3 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '3rem' }}>
-        {players.slice(0, 3).map((p, i) => {
-          const rankColors = ['#f5c842', '#8a8878', '#7a5a30']
-          return (
-            <div key={p.rank} style={{
-              background: '#0f1318',
-              padding: '2rem',
-              border: `1px solid ${i === 0 ? 'rgba(245,200,66,0.2)' : 'rgba(255,255,255,0.04)'}`,
-              textAlign: 'center',
-              position: 'relative',
-              overflow: 'hidden',
-            }}>
-              {i === 0 && (
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: '#f5c842' }} />
-              )}
-              <div style={{ fontFamily: 'var(--font-serif)', fontSize: '3.5rem', color: rankColors[i], lineHeight: 1, marginBottom: '1rem' }}>
-                #{p.rank}
-              </div>
-              <div style={{ width: 48, height: 48, background: '#161d26', border: '1px solid rgba(0,229,255,0.1)', margin: '0 auto 1rem' }} />
-              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '15px', fontWeight: 600, color: '#e8e6dc', marginBottom: '0.25rem' }}>{p.name}</p>
-              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t3)', marginBottom: '1.25rem' }}>@{p.handle}</p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                <div style={{ background: '#0a0d11', padding: '0.6rem' }}>
-                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#e8e6dc', fontWeight: 500 }}>{fmtNum(p.value)}</p>
-                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--t3)', letterSpacing: '0.15em', marginTop: '2px' }}>JETONS</p>
+      {!loading && players.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1rem', marginBottom: '3rem' }}>
+          {players.slice(0, 3).map((p, i) => (
+            <Link key={p.did} href={`/profil/${p.handle}`} style={{ textDecoration: 'none' }}>
+              <div style={{
+                background: '#0f1318',
+                padding: isMobile ? '1.25rem' : '2rem',
+                border: `1px solid ${i === 0 ? 'rgba(245,200,66,0.2)' : 'rgba(255,255,255,0.04)'}`,
+                textAlign: 'center',
+                position: 'relative',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                transition: 'background 0.15s',
+                display: isMobile ? 'flex' : 'block',
+                alignItems: isMobile ? 'center' : undefined,
+                gap: isMobile ? '1rem' : undefined,
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = '#141a21')}
+              onMouseLeave={e => (e.currentTarget.style.background = '#0f1318')}
+              >
+                {i === 0 && (
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: '#f5c842' }} />
+                )}
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: isMobile ? '2.2rem' : '3.5rem', color: rankColors[i], lineHeight: 1, marginBottom: isMobile ? 0 : '1rem', flexShrink: 0 }}>
+                  #{p.rank}
                 </div>
-                <div style={{ background: '#0a0d11', padding: '0.6rem' }}>
-                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: p.gain >= 0 ? '#38bdf8' : '#e05252', fontWeight: 500 }}>
-                    {p.gain >= 0 ? '+' : ''}{p.gain}%
-                  </p>
-                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--t3)', letterSpacing: '0.15em', marginTop: '2px' }}>24H</p>
-                </div>
+                {isMobile ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0 }}>
+                    <div style={{ width: 40, height: 40, background: '#161d26', border: '1px solid rgba(0,229,255,0.1)', flexShrink: 0, overflow: 'hidden' }}>
+                      {p.avatar && <img src={p.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                      <p style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', fontWeight: 600, color: '#e8e6dc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.displayName}</p>
+                      <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t3)' }}>@{p.handle}</p>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <p style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#e8e6dc', fontWeight: 500 }}>{fmtNum(p.portfolio)} J</p>
+                      <p style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--t3)', marginTop: '2px' }}>{p.cards} cartes</p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ width: 48, height: 48, background: '#161d26', border: '1px solid rgba(0,229,255,0.1)', margin: '0 auto 1rem', overflow: 'hidden' }}>
+                      {p.avatar && <img src={p.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
+                    </div>
+                    <p style={{ fontFamily: 'var(--font-sans)', fontSize: '15px', fontWeight: 600, color: '#e8e6dc', marginBottom: '0.25rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.displayName}</p>
+                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t3)', marginBottom: '1.25rem' }}>@{p.handle}</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                      <div style={{ background: '#0a0d11', padding: '0.6rem' }}>
+                        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#e8e6dc', fontWeight: 500 }}>{fmtNum(p.portfolio)}</p>
+                        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--t3)', letterSpacing: '0.15em', marginTop: '2px' }}>JETONS</p>
+                      </div>
+                      <div style={{ background: '#0a0d11', padding: '0.6rem' }}>
+                        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#38bdf8', fontWeight: 500 }}>{p.cards}</p>
+                        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--t3)', letterSpacing: '0.15em', marginTop: '2px' }}>CARTES</p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Table */}
-      <div style={{ border: '1px solid rgba(0,229,255,0.1)', background: '#0f1318' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr 80px 160px 80px 80px', gap: '1rem', padding: '0.75rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-          {[t('lb_rank'), t('lb_player'), t('lb_cards'), t('lb_portfolio'), '24H', t('lb_steals')].map((h) => (
-            <span key={h} style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--t3)', letterSpacing: '0.2em' }}>{h}</span>
+            </Link>
           ))}
         </div>
-        {players.map((p) => (
-          <div key={p.rank} style={{
-            display: 'grid', gridTemplateColumns: '60px 1fr 80px 160px 80px 80px',
-            gap: '1rem', padding: '1rem', alignItems: 'center',
-            borderBottom: '1px solid rgba(255,255,255,0.03)',
-            cursor: 'pointer',
-            transition: 'background 0.15s',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#0f1318')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-          >
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--t3)' }}>#{p.rank}</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ width: 32, height: 32, background: '#161d26', border: '1px solid rgba(0,229,255,0.08)', flexShrink: 0 }} />
-              <div>
-                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', fontWeight: 600, color: '#e8e6dc' }}>{p.name}</p>
-                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t3)' }}>@{p.handle}</p>
-              </div>
-            </div>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#8a8878' }}>{p.cards}</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#e8e6dc' }}>{fmtNum(p.value)} J</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: p.gain >= 0 ? '#38bdf8' : '#e05252' }}>
-              {p.gain >= 0 ? '+' : ''}{p.gain}%
-            </span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#8a8878' }}>{p.steals}</span>
+      )}
+
+      {/* Table */}
+      {!loading && players.length > 3 && (
+        <div style={{ border: '1px solid rgba(0,229,255,0.1)', background: '#0f1318' }}>
+          {/* Header */}
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '44px 1fr 90px' : '60px 1fr 80px 160px 80px', gap: '0.75rem', padding: '0.75rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+            {(isMobile
+              ? [t('lb_rank'), t('lb_player'), t('lb_portfolio')]
+              : [t('lb_rank'), t('lb_player'), t('lb_cards'), t('lb_portfolio'), t('lb_steals')]
+            ).map(h => (
+              <span key={h} style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--t3)', letterSpacing: '0.2em' }}>{h}</span>
+            ))}
           </div>
-        ))}
-      </div>
+          {players.slice(3).map(p => (
+            <Link key={p.did} href={`/profil/${p.handle}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div
+                style={{ display: 'grid', gridTemplateColumns: isMobile ? '44px 1fr 90px' : '60px 1fr 80px 160px 80px', gap: '0.75rem', padding: isMobile ? '0.75rem 1rem' : '1rem', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.03)', cursor: 'pointer', transition: 'background 0.15s' }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#141a21')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--t3)' }}>#{p.rank}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+                  <div style={{ width: 32, height: 32, background: '#161d26', border: '1px solid rgba(0,229,255,0.08)', flexShrink: 0, overflow: 'hidden' }}>
+                    {p.avatar && <img src={p.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 600, color: '#e8e6dc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.displayName}</p>
+                    {!isMobile && <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t3)' }}>@{p.handle}</p>}
+                  </div>
+                </div>
+                {!isMobile && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#8a8878' }}>{p.cards}</span>}
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#e8e6dc' }}>{fmtNum(p.portfolio)} J</span>
+                {!isMobile && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#8a8878' }}>{p.steals}</span>}
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {!loading && players.length === 0 && (
+        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--t3)' }}>Aucun joueur pour l&apos;instant.</p>
+      )}
 
     </div>
   )

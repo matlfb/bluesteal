@@ -10,6 +10,7 @@ export interface BskyProfile {
   followersCount: number
   followsCount: number
   postsCount: number
+  verified: boolean
 }
 
 export interface CardProfile extends BskyProfile {
@@ -52,6 +53,7 @@ export async function fetchProfiles(handles: string[]): Promise<BskyProfile[]> {
     followersCount: p.followersCount || 0,
     followsCount: p.followsCount || 0,
     postsCount: p.postsCount || 0,
+    verified: p.verification?.verifiedStatus === 'valid',
   }))
 }
 

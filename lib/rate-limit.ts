@@ -1,15 +1,8 @@
-interface Entry { count: number; reset: number }
-const store = new Map<string, Entry>()
+import { redis } from './redis'
 
-// Returns true if the request is allowed, false if rate limited
-export function rateLimit(key: string, limit: number, windowMs: number): boolean {
-  const now = Date.now()
-  const entry = store.get(key)
-  if (!entry || now > entry.reset) {
-    store.set(key, { count: 1, reset: now + windowMs })
-    return true
-  }
-  if (entry.count >= limit) return false
-  entry.count++
-  return true
+export async function rateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
+  const k = `rl:${key}`
+  const count = await redis.incr(k)
+  if (count === 1) await redis.pexpire(k, windowMs)
+  return count <= limit
 }
