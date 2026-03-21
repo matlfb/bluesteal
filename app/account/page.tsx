@@ -342,7 +342,7 @@ export default function ComptePage() {
 
         {/* HISTORIQUE */}
         {tab === 'history' && (
-          <HistoryTab events={historyEvents} />
+          <HistoryTab events={historyEvents} cardHistory={[]} />
         )}
 
         {/* ACTIVITÉ BSKY */}
