@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchProfiles, calcPrice, calcPriceChange } from '@/lib/bsky'
-import { isBlacklisted } from '@/lib/blacklist'
+import { filterBlacklisted } from '@/lib/blacklist'
 
 export async function GET(req: NextRequest) {
   const handles = req.nextUrl.searchParams.getAll('actors')
@@ -10,8 +10,8 @@ export async function GET(req: NextRequest) {
 
   try {
     const profiles = await fetchProfiles(handles.slice(0, 25))
-    const cards = profiles
-      .filter(p => !isBlacklisted(p.did))
+    const visible = await filterBlacklisted(profiles.map(p => ({ ...p, did: p.did })))
+    const cards = visible
       .map(p => ({
         ...p,
         price: calcPrice(p.followersCount),

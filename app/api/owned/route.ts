@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getOwnedByOwner } from '@/lib/db'
 import { getValue } from '@/lib/card-values'
+import { filterBlacklisted } from '@/lib/blacklist'
 
 export const runtime = 'nodejs'
 
@@ -9,8 +10,9 @@ export async function GET(req: NextRequest) {
   if (!owner_did) return NextResponse.json({ error: 'missing owner_did' }, { status: 400 })
 
   const owned = await getOwnedByOwner(owner_did)
+  const filtered = await filterBlacklisted(owned.map(o => ({ ...o, did: o.subject_did })))
   const withValues = await Promise.all(
-    owned.map(async o => ({ ...o, value: await getValue(o.subject_did) }))
+    filtered.map(async o => ({ ...o, value: await getValue(o.subject_did) }))
   )
   return NextResponse.json({ owned: withValues })
 }
