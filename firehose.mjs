@@ -153,44 +153,9 @@ function connect() {
 
   ws.on('open', () => console.log('[firehose] connected'))
 
-  ws.on('message', (data) => {
-    try {
-      const event = JSON.parse(data.toString())
-      if (event.kind !== 'commit') return
-      if (event.commit?.operation !== 'create') return
-      const record = event.commit.record
-      if (!record?.subject?.did) return
-
-      const owner_did   = event.did
-      const subject_did = record.subject.did
-      if (!DID_RE.test(owner_did) || !DID_RE.test(subject_did)) return
-      if (owner_did === subject_did) return
-
-      resolveHandle(owner_did).then(async owner_handle => {
-        const price = await getValue(subject_did)
-        const ok = await debitBalance(owner_did, owner_handle, price)
-        if (!ok) {
-          console.log(`[firehose] rejected: ${owner_handle} insufficient balance (price=${price})`)
-          return
-        }
-        const newValue = Math.round((await getValue(subject_did)) * 1.2)
-        await setValue(subject_did, newValue)
-        const now = new Date().toISOString()
-        const prevOwnership = await setOwnership({ subject_did, owner_did, owner_handle, purchased_at: now })
-        if (prevOwnership !== null) {
-          // Add to global activity feed
-          const activity = JSON.stringify({ buyer_did: owner_did, buyer_handle: owner_handle, subject_did, subject_handle: record.subject.handle ?? subject_did, prev_owner_handle: prevOwnership?.owner_handle, price, at: now })
-          await redisPipeline([
-            ['lpush', 'activity:global', activity],
-            ['ltrim', 'activity:global', '0', '499'],
-            ['lpush', `card_history:${subject_did}`, JSON.stringify({ type: 'bought', actor_did: owner_did, subject_did, subject_handle: record.subject.handle ?? subject_did, price, at: now, counterpart_handle: prevOwnership?.owner_handle })],
-            ['ltrim', `card_history:${subject_did}`, '0', '199'],
-          ])
-        }
-        console.log(`[firehose] ${owner_handle} acquired ${subject_did} for ${price}J`)
-      }).catch(console.error)
-    } catch {}
-  })
+  // Steals are processed exclusively via /api/own (web UI)
+  // ATProto records are not trusted as they can be created directly in any PDS
+  ws.on('message', () => {})
 
   ws.on('close', () => { console.log('[firehose] disconnected — reconnect in 5s'); setTimeout(connect, 5000) })
   ws.on('error', err => console.error('[firehose] error:', err.message))
