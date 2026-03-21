@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   const owner_did = sessionToken ? verifySession(sessionToken) : null
   if (!owner_did) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!await rateLimit(, 20, 60_000)) {
+  if (!await rateLimit(`own:${owner_did}`, 20, 60_000)) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   let owner_handle: string = owner_did
   try {
     const res = await fetch(
-      ,
+      `https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${encodeURIComponent(owner_did)}`,
       { signal: AbortSignal.timeout(5000) }
     )
     if (res.ok) {
