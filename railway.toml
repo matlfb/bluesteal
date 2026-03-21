@@ -3,3 +3,6 @@ builder = "nixpacks"
 
 [deploy]
 startCommand = "next start"
+
+[variables]
+NIXPACKS_NODE_VERSION = "20"
