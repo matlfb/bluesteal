@@ -65,6 +65,7 @@ export default function ComptePage() {
   const [ownedCards, setOwnedCards] = useState<OwnedCard[]>([])
   const [collectionLoading, setCollectionLoading] = useState(false)
   const [historyEvents, setHistoryEvents] = useState<HistoryEvent[]>([])
+  const [cardHistory, setCardHistory] = useState<HistoryEvent[]>([])
   const [myCardValue, setMyCardValue] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [tab, setTab] = useState<Tab>('collection')
@@ -142,6 +143,10 @@ export default function ComptePage() {
     fetch(`/api/history?did=${encodeURIComponent(user.did)}`)
       .then(r => r.json())
       .then(data => setHistoryEvents(data.events ?? []))
+      .catch(() => {})
+    fetch(`/api/history?subject=${encodeURIComponent(user.did)}`)
+      .then(r => r.json())
+      .then(data => setCardHistory(data.events ?? []))
       .catch(() => {})
   }, [user?.did, session])
 
@@ -342,7 +347,7 @@ export default function ComptePage() {
 
         {/* HISTORIQUE */}
         {tab === 'history' && (
-          <HistoryTab events={historyEvents} cardHistory={[]} />
+          <HistoryTab events={historyEvents} cardHistory={cardHistory} />
         )}
 
         {/* ACTIVITÉ BSKY */}
