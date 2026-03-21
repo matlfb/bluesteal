@@ -6,10 +6,10 @@ export function getOAuthClient(): BrowserOAuthClient {
   if (!_client) {
     _client = new BrowserOAuthClient({
       clientMetadata: {
-        client_id: 'https://bluesteal.matlfb.com/client-metadata.json',
+        client_id: 'https://bluesteal.app/client-metadata.json',
         client_name: 'BlueSTEAL',
-        client_uri: 'https://bluesteal.matlfb.com',
-        redirect_uris: ['https://bluesteal.matlfb.com/callback'],
+        client_uri: 'https://bluesteal.app',
+        redirect_uris: ['https://bluesteal.app/callback'],
         grant_types: ['authorization_code', 'refresh_token'],
         response_types: ['code'],
         scope: 'atproto transition:generic',

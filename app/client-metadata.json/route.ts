@@ -4,13 +4,13 @@ import { NextResponse } from 'next/server'
 // Must be publicly accessible at this exact URL
 export async function GET() {
   const metadata = {
-    client_id: 'https://bluesteal.matlfb.com/client-metadata.json',
+    client_id: 'https://bluesteal.app/client-metadata.json',
     client_name: 'BlueSTEAL',
-    client_uri: 'https://bluesteal.matlfb.com',
-    logo_uri: 'https://bluesteal.matlfb.com/logo.png',
-    tos_uri: 'https://bluesteal.matlfb.com',
-    policy_uri: 'https://bluesteal.matlfb.com',
-    redirect_uris: ['https://bluesteal.matlfb.com/callback'],
+    client_uri: 'https://bluesteal.app',
+    logo_uri: 'https://bluesteal.app/logo.png',
+    tos_uri: 'https://bluesteal.app',
+    policy_uri: 'https://bluesteal.app',
+    redirect_uris: ['https://bluesteal.app/callback'],
     grant_types: ['authorization_code', 'refresh_token'],
     response_types: ['code'],
     scope: 'atproto repo:blue.steal.card?action=create repo:app.bsky.feed.post?action=create',
