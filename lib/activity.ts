@@ -15,10 +15,7 @@ function parse(item: unknown): ActivityEvent {
 }
 
 export async function addActivity(event: ActivityEvent): Promise<void> {
-  const pipe = redis.pipeline()
-  pipe.lpush('activity:global', JSON.stringify(event))
-  pipe.ltrim('activity:global', 0, 499)
-  await pipe.exec()
+  await redis.lpush('activity:global', JSON.stringify(event))
 }
 
 export async function getGlobalActivity(limit = 50): Promise<ActivityEvent[]> {
@@ -28,7 +25,7 @@ export async function getGlobalActivity(limit = 50): Promise<ActivityEvent[]> {
 
 export async function getFriendsActivity(dids: string[], limit = 50): Promise<ActivityEvent[]> {
   const set = new Set(dids)
-  const all = await redis.lrange('activity:global', 0, 499)
+  const all = await redis.lrange('activity:global', 0, -1)
   return all
     .map(parse)
     .filter(e => set.has(e.buyer_did) || set.has(e.subject_did))
@@ -36,7 +33,7 @@ export async function getFriendsActivity(dids: string[], limit = 50): Promise<Ac
 }
 
 export async function getUserActivity(did: string, handle: string, limit = 50): Promise<ActivityEvent[]> {
-  const all = await redis.lrange('activity:global', 0, 499)
+  const all = await redis.lrange('activity:global', 0, -1)
   return all
     .map(parse)
     .filter(e => e.buyer_did === did || e.prev_owner_handle === handle)
