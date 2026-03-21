@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   const allDids = [...new Set([
     ...cards12.map(c => c.did),
     ...owners.filter(Boolean).map(o => o!.owner_did),
-  ])]
+  ].filter(Boolean))]
 
   const profileMap: Record<string, any> = {}
   for (let i = 0; i < allDids.length; i += 25) {

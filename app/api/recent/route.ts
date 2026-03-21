@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   const recent = (await filterBlacklisted(await getRecent(limit * 2))).slice(0, limit)
   if (!recent.length) return NextResponse.json({ cards: [] })
 
-  const allDids = [...new Set([...recent.map(r => r.subject_did), ...recent.map(r => r.owner_did)])]
+  const allDids = [...new Set([...recent.map(r => r.subject_did), ...recent.map(r => r.owner_did)].filter(Boolean))]
   const params = allDids.map(d => `actors=${encodeURIComponent(d)}`).join('&')
 
   try {
