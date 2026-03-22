@@ -180,7 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (oauthSession) { try { await oauthSession.signOut() } catch {} }
       setUser(null)
       setSession(null)
-      window.location.replace('/login?blocked=1')
+      window.location.replace('/login?blocked=1&reason=session')
       return
     }
 

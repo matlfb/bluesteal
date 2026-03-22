@@ -13,7 +13,7 @@ function LoginForm() {
   const [handle, setHandle] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(
-    searchParams.get('blocked') === '1' ? 'Votre compte est bloqué et ne peut pas accéder à BlueSTEAL.' : null
+    searchParams.get('blocked') === '1' ? 'Impossible de se connecter à BlueSTEAL. Vérifiez que vous n'avez pas bloqué le compte @bluesteal.app sur Bluesky.' : null
   )
 
   async function handleSubmit(e: React.FormEvent) {
@@ -25,7 +25,7 @@ function LoginForm() {
       const normalized = handle.trim().replace(/^@/, '')
       const check = await fetch(`/api/check-blocked?handle=${encodeURIComponent(normalized)}`).then(r => r.json()).catch(() => ({ blocked: false }))
       if (check.blocked) {
-        setError('Votre compte est bloqué et ne peut pas accéder à BlueSTEAL.')
+        setError('Impossible de se connecter à BlueSTEAL. Vérifiez que vous n'avez pas bloqué le compte @bluesteal.app sur Bluesky.')
         setLoading(false)
         return
       }
