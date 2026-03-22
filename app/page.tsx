@@ -164,7 +164,6 @@ export default function HomePage() {
     setStealing(true)
     try {
       const agent = new Agent(session)
-      await agent.com.atproto.repo.createRecord({ repo: user.did, collection: 'blue.steal.card', record: { $type: 'blue.steal.card', subject: { did: modalCard.did, handle: modalCard.handle }, price: modalCard.price, purchasedAt: new Date().toISOString() } })
       deductJetons(modalCard.price)
       addOwned(modalCard.did)
       fetch('/api/own', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subject_did: modalCard.did, subject_handle: modalCard.handle, owner_did: user.did, owner_handle: user.handle, purchased_at: new Date().toISOString() }) }).catch(() => {})
