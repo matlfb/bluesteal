@@ -36,6 +36,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t4)', letterSpacing: '0.1em' }}>
                 © BLUESTEAL 2026 ·{' '}
                 <Link href="/terms" style={{ color: 'var(--t3)', textDecoration: 'none' }}>TERMS OF SERVICE</Link>
+                {' '}·{' '}
+                <Link href="/privacy" style={{ color: 'var(--t3)', textDecoration: 'none' }}>PRIVACY POLICY</Link>
                 {' '}· NOT AFFILIATED WITH BLUESKY SOCIAL PBC
               </p>
             </footer>
