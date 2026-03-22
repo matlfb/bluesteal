@@ -243,16 +243,6 @@ export default function ProfilPage() {
     setStealing(true)
     try {
       const agent = new Agent(session)
-      await agent.com.atproto.repo.createRecord({
-        repo: user.did,
-        collection: 'blue.steal.card',
-        record: {
-          $type: 'blue.steal.card',
-          subject: { did: profile.did, handle: profile.handle },
-          price: BASE_PRICE,
-          purchasedAt: new Date().toISOString(),
-        },
-      })
       const price = cardValue ?? BASE_PRICE
       deductJetons(price)
       addOwned(profile.did)
@@ -296,10 +286,6 @@ export default function ProfilPage() {
     setCollectionStealing(true)
     try {
       const agent = new Agent(session)
-      await agent.com.atproto.repo.createRecord({
-        repo: user.did, collection: 'blue.steal.card',
-        record: { $type: 'blue.steal.card', subject: { did: collectionModal.did, handle: collectionModal.handle }, price: collectionModal.value, purchasedAt: new Date().toISOString() },
-      })
       deductJetons(collectionModal.value)
       addOwned(collectionModal.did)
       fetch('/api/own', {
@@ -407,7 +393,7 @@ export default function ProfilPage() {
                       onMouseEnter={e => { if (!isOwned && !isOwnProfile && !stolen && !stealing) (e.currentTarget as HTMLElement).style.background = '#00e5ff' }}
                       onMouseLeave={e => { if (!isOwned && !isOwnProfile && !stolen && !stealing) (e.currentTarget as HTMLElement).style.background = '#00b4d8' }}
                     >
-                      {isOwnProfile ? `${t('profil_your_card')} — ${fmtNum(cardValue ?? BASE_PRICE)} J` : (isOwned || stolen) ? `${t('profil_owned')} — ${fmtNum(cardValue ?? BASE_PRICE)} J` : stealing ? t('profil_stealing') : currentOwner ? t('profil_steal_owner', { owner: currentOwner.owner_handle, price: fmtNum(cardValue ?? BASE_PRICE) }) : t('profil_steal_noowner', { price: fmtNum(cardValue ?? BASE_PRICE) })}
+                      {isOwnProfile ? `${t('profil_your_card')} — ${fmtNum(cardValue ?? BASE_PRICE)} T` : (isOwned || stolen) ? `${t('profil_owned')} — ${fmtNum(cardValue ?? BASE_PRICE)} T` : stealing ? t('profil_stealing') : currentOwner ? t('profil_steal_owner', { owner: currentOwner.owner_handle, price: fmtNum(cardValue ?? BASE_PRICE) }) : t('profil_steal_noowner', { price: fmtNum(cardValue ?? BASE_PRICE) })}
                     </button>
                   ) : (
                     <Link href="/login" style={{
@@ -418,7 +404,7 @@ export default function ProfilPage() {
                       fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 500,
                       letterSpacing: '0.1em', textDecoration: 'none',
                     }}>
-                      CONNEXION POUR STEAL →
+                      SIGN IN TO STEAL →
                     </Link>
                   )}
                 </div>
