@@ -1,6 +1,5 @@
 import { setDefaultResultOrder } from 'dns'
 setDefaultResultOrder('ipv4first')
-import WebSocket from 'ws'
 
 const REDIS_URL   = process.env.UPSTASH_REDIS_REST_URL
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN
@@ -10,7 +9,6 @@ if (!REDIS_URL || !REDIS_TOKEN) {
   process.exit(1)
 }
 
-const JETSTREAM = 'wss://jetstream2.us-east.bsky.network/subscribe?wantedCollections=blue.steal.card'
 const BASE_VALUE              = 1500
 const MIN_VALUE               = 600
 const STARTING_BALANCE        = 25000
@@ -149,23 +147,6 @@ async function runHourly() {
   console.log('[cron] done')
 }
 
-// ── Firehose ──────────────────────────────────────────────────────────────────
-
-function connect() {
-  console.log('[firehose] connecting...')
-  const ws = new WebSocket(JETSTREAM)
-
-  ws.on('open', () => console.log('[firehose] connected'))
-
-  // Steals are processed exclusively via /api/own (web UI)
-  // ATProto records are not trusted as they can be created directly in any PDS
-  ws.on('message', () => {})
-
-  ws.on('close', () => { console.log('[firehose] disconnected — reconnect in 5s'); setTimeout(connect, 5000) })
-  ws.on('error', err => console.error('[firehose] error:', err.message))
-}
-
-connect()
 setTimeout(runHourly, 3000)
 setInterval(runHourly, 60 * 60 * 1000)
 
