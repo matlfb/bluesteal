@@ -73,8 +73,8 @@ export const translations = {
     activity_notif_body: '@{buyer} just bought @{subject} from your collection for {price} T',
     // Homepage
     home_label: 'BLUESTEAL',
-    home_h1a: "Collect your friends'", home_h1b: 'accounts.',
-    home_sub: "Every Bluesky profile becomes a collectible card. Buy, invest, and grow their value.\nThe more a card is in demand, the more it's worth.",
+    home_h1a: "Collect the accounts", home_h1b: 'you love.',
+    home_sub: "Every Bluesky profile becomes a collectible card. Buy, steal, and grow their value.\nThe more a card is in demand, the more it's worth.",
     home_sign_in: 'Sign in with Bluesky →', home_browse: 'Browse cards',
     home_hot: 'Hot', home_recent: 'Recent purchases', home_friends: 'Your friends',
     home_friends_login_title: 'Sign in to see your friends',
