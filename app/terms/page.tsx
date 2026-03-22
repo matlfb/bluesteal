@@ -34,9 +34,9 @@ export default function TermsPage() {
       <Section n="4" title="Opting Out">
         <p>Any Bluesky user can remove themselves from BlueSTEAL at any time by blocking the <strong>bluesteal.app</strong> account on Bluesky. Once blocked:</p>
         <ul>
-          <li>Your card is immediately removed from the game</li>
+          <li>Your card is removed from the game within 5 minutes</li>
           <li>Your DID is added to our blocklist so you cannot re-enter the game</li>
-          <li>Any associated in-game value is voided and removed from circulation</li>
+          <li>Any associated in-game value is voided and permanently deleted from our systems</li>
         </ul>
       </Section>
 

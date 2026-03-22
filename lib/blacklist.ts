@@ -22,8 +22,22 @@ export async function filterBlacklisted<T extends { did?: string; subject_did?: 
   })
 }
 
+async function purgeCard(did: string): Promise<void> {
+  const ownerVal = await redis.get(`ownership:${did}`)
+  const owner = ownerVal
+    ? (typeof ownerVal === 'string' ? JSON.parse(ownerVal) : ownerVal) as { owner_did: string }
+    : null
+  const pipe = redis.pipeline()
+  if (owner?.owner_did) pipe.srem(`owner:${owner.owner_did}:cards`, did)
+  pipe.del(`ownership:${did}`)
+  pipe.hdel('ownerships:all', did)
+  pipe.hdel('card_values:all', did)
+  pipe.zrem('cards:by_value', did)
+  await pipe.exec()
+}
+
 export async function addToBlacklist(did: string): Promise<void> {
-  await redis.sadd('blacklist:manual', did)
+  await Promise.all([redis.sadd('blacklist:manual', did), purgeCard(did)])
 }
 
 export async function removeFromBlacklist(did: string): Promise<void> {
@@ -94,11 +108,18 @@ export async function syncFromClearsky(handle = 'bluesteal.app'): Promise<{ adde
     redis.smembers('blacklist:opted-out'),
   ])
   const prevAutoSet = new Set(prevAuto)
+  const prevOptedOutSet = new Set(prevOptedOut)
   const newAuto = [...newAutoSet]
   const newOptedOut = [...newOptedOutSet]
-  const added = newAuto.filter(d => !prevAutoSet.has(d)).length
+
+  const newlyAutoBlocked = newAuto.filter(d => !prevAutoSet.has(d))
+  const newlyOptedOut = newOptedOut.filter(d => !prevOptedOutSet.has(d))
+  const added = newlyAutoBlocked.length
   const removed = prevAuto.filter(d => !newAutoSet.has(d)).length
-  const optedOut = newOptedOut.filter(d => !new Set(prevOptedOut).has(d)).length
+  const optedOut = newlyOptedOut.length
+
+  // Purge card data for newly blacklisted accounts
+  await Promise.all([...newlyAutoBlocked, ...newlyOptedOut].map(purgeCard))
 
   const pipe = redis.pipeline()
   pipe.del('blacklist:auto')
