@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { DM_Serif_Display, Manrope, DM_Mono } from 'next/font/google'
+import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import { AuthProvider } from '@/context/AuthContext'
 import { LangProvider } from '@/context/LangContext'
@@ -31,6 +32,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <LangProvider>
             <Navbar />
             <main style={{ paddingTop: '60px' }}>{children}</main>
+            <footer style={{ borderTop: '1px solid rgba(0,229,255,0.08)', padding: '1.5rem', paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))', textAlign: 'center' }}>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t4)', letterSpacing: '0.1em' }}>
+                © BLUESTEAL 2026 ·{' '}
+                <Link href="/terms" style={{ color: 'var(--t3)', textDecoration: 'none' }}>TERMS OF SERVICE</Link>
+                {' '}· NOT AFFILIATED WITH BLUESKY SOCIAL PBC
+              </p>
+            </footer>
           </LangProvider>
         </AuthProvider>
       </body>
