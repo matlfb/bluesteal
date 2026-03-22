@@ -212,7 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { getOAuthClient } = await import('@/lib/oauth-client')
     const client = getOAuthClient()
     await client.signIn(handle, {
-      scope: 'atproto repo:blue.steal.card?action=create repo:app.bsky.feed.post?action=create',
+      scope: 'atproto repo:app.bsky.feed.post?action=create',
     })
   }
 
