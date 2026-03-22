@@ -11,7 +11,9 @@ export async function GET(req: NextRequest) {
   if (!await rateLimit(`pub:${getClientIP(req)}`, 120, 60_000))
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   const limit = Math.min(Number(req.nextUrl.searchParams.get('limit') ?? '6'), 20)
-  const recent = (await filterBlacklisted(await getRecent(limit * 2))).slice(0, limit)
+  const all = await filterBlacklisted(await getRecent(50))
+  const seen = new Set<string>()
+  const recent = all.filter(r => { if (seen.has(r.subject_did)) return false; seen.add(r.subject_did); return true }).slice(0, limit)
   if (!recent.length) return NextResponse.json({ cards: [] })
 
   const allDids = [...new Set([...recent.map(r => r.subject_did), ...recent.map(r => r.owner_did)].filter(Boolean))]
