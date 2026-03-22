@@ -23,6 +23,12 @@ function LoginForm() {
     setError(null)
     try {
       const normalized = handle.trim().replace(/^@/, '')
+      const check = await fetch(`/api/check-blocked?handle=${encodeURIComponent(normalized)}`).then(r => r.json()).catch(() => ({ blocked: false }))
+      if (check.blocked) {
+        setError('Votre compte est bloqué et ne peut pas accéder à BlueSTEAL.')
+        setLoading(false)
+        return
+      }
       await signIn(normalized)
     } catch (e: any) {
       setError(e?.message || t('sign_in_error'))
