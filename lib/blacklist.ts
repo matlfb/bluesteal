@@ -1,11 +1,12 @@
 import { redis } from './redis'
 
 export async function isBlacklisted(did: string): Promise<boolean> {
-  const [inManual, inAuto] = await Promise.all([
+  const [inManual, inAuto, inOptedOut] = await Promise.all([
     redis.sismember('blacklist:manual', did),
     redis.sismember('blacklist:auto', did),
+    redis.sismember('blacklist:opted-out', did),
   ])
-  return Boolean(inManual) || Boolean(inAuto)
+  return Boolean(inManual) || Boolean(inAuto) || Boolean(inOptedOut)
 }
 
 export async function filterBlacklisted<T extends { did?: string; subject_did?: string; buyer_did?: string }>(items: T[]): Promise<T[]> {
