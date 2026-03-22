@@ -15,10 +15,12 @@ export async function GET(req: NextRequest) {
   if (!filtered.length) return NextResponse.json({ owned: [] })
 
   const dids = filtered.map(o => o.subject_did)
-  const rawValues = ((await redis.hmget('card_values:all', ...dids)) ?? []) as unknown as (string | null)[]
+  const pipe = redis.pipeline()
+  dids.forEach(did => pipe.hget('card_values:all', did))
+  const rawValues = (await pipe.exec()) as (string | number | null)[]
   const withValues = filtered.map((o, i) => ({
     ...o,
-    value: rawValues[i] ? Number(rawValues[i]) : BASE_VALUE,
+    value: rawValues[i] != null ? Number(rawValues[i]) : BASE_VALUE,
   }))
   return NextResponse.json({ owned: withValues })
 }
