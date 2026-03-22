@@ -13,7 +13,7 @@ export async function GET() {
     redirect_uris: ['https://bluesteal.app/callback'],
     grant_types: ['authorization_code', 'refresh_token'],
     response_types: ['code'],
-    scope: 'atproto repo:blue.steal.card?action=create repo:app.bsky.feed.post?action=create',
+    scope: 'atproto repo:app.bsky.feed.post?action=create',
     token_endpoint_auth_method: 'none',
     application_type: 'web',
     dpop_bound_access_tokens: true,
