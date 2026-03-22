@@ -170,11 +170,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser({ did, handle: did })
     }
 
-    await fetch('/api/session', {
+    const sessionRes = await fetch('/api/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ did, handle }),
-    }).catch(() => {})
+    }).catch(() => null)
+
+    if (sessionRes?.status === 403) {
+      if (oauthSession) { try { await oauthSession.signOut() } catch {} }
+      setUser(null)
+      setSession(null)
+      window.location.replace('/login?blocked=1')
+      return
+    }
 
     await fetchOwnedDids(oauthSession)
     syncBalance(did)

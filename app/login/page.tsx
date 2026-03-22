@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
 import { useLang } from '@/context/LangContext'
@@ -8,9 +9,12 @@ import { useLang } from '@/context/LangContext'
 export default function LoginPage() {
   const { signIn } = useAuth()
   const { t } = useLang()
+  const searchParams = useSearchParams()
   const [handle, setHandle] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(
+    searchParams.get('blocked') === '1' ? 'Votre compte est bloqué et ne peut pas accéder à BlueSTEAL.' : null
+  )
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { signSession } from '@/lib/session'
 import { rateLimit } from '@/lib/rate-limit'
+import { isBlacklisted } from '@/lib/blacklist'
 
 export const runtime = 'nodejs'
 
@@ -30,6 +31,10 @@ export async function POST(req: NextRequest) {
       }
       // If Bluesky is unreachable we let it pass — OAuth already verified ownership
     } catch { /* network error — trust OAuth */ }
+  }
+
+  if (await isBlacklisted(did)) {
+    return NextResponse.json({ error: 'blocked' }, { status: 403 })
   }
 
   const token = signSession(did)

@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   }))
 
   const visible = await filterBlacklisted(raw)
-  const values = await Promise.all(visible.map(a => getValue(a.did)))
+  const values = await Promise.all(visible.map(a => getValue(a.did!)))
   const actors = visible.map((a, i) => ({ ...a, value: values[i] }))
 
   return NextResponse.json({ actors })
