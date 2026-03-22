@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { useLang } from '@/context/LangContext'
-import { calcPrice } from '@/lib/bsky'
+
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value)
@@ -17,7 +17,7 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 interface SearchResult {
-  did: string; handle: string; displayName: string; avatar: string | null; followersCount: number; verified: boolean
+  did: string; handle: string; displayName: string; avatar: string | null; followersCount: number; verified: boolean; value: number
 }
 
 function IconHome({ active }: { active: boolean }) {
@@ -108,16 +108,10 @@ export default function Navbar() {
   useEffect(() => {
     if (!debouncedQuery.trim()) { setResults([]); setSearching(false); return }
     setSearching(true)
-    fetch(`https://public.api.bsky.app/xrpc/app.bsky.actor.searchActors?q=${encodeURIComponent(debouncedQuery)}&limit=7`)
+    fetch(`/api/search?q=${encodeURIComponent(debouncedQuery)}`)
       .then(r => r.json())
       .then(data => {
-        setResults((data.actors || []).map((a: any) => ({
-          did: a.did, handle: a.handle,
-          displayName: a.displayName || a.handle,
-          avatar: a.avatar || null,
-          followersCount: a.followersCount || 0,
-          verified: a.verification?.verifiedStatus === 'valid' || a.verification?.trustedVerifierStatus === 'valid',
-        })))
+        setResults(data.actors || [])
         setFocusedIdx(-1)
       })
       .catch(() => setResults([]))
@@ -235,7 +229,7 @@ export default function Navbar() {
                       </p>
                     </div>
                     <div style={{ flexShrink: 0, textAlign: 'right' }}>
-                      <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#00e5ff' }}>{fmtNum(calcPrice(r.followersCount))} T</p>
+                      <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#00e5ff' }}>{fmtNum(r.value)} T</p>
                       <p style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--t4)', marginTop: '2px' }}>{t('nav_price_label')}</p>
                     </div>
                   </Link>
@@ -367,7 +361,7 @@ export default function Navbar() {
                     <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{r.handle}</p>
                   </div>
                   <div style={{ flexShrink: 0 }}>
-                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#00e5ff' }}>{fmtNum(calcPrice(r.followersCount))} T</p>
+                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#00e5ff' }}>{fmtNum(r.value)} T</p>
                   </div>
                 </Link>
               ))}
