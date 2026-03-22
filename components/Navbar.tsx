@@ -235,7 +235,7 @@ export default function Navbar() {
                       </p>
                     </div>
                     <div style={{ flexShrink: 0, textAlign: 'right' }}>
-                      <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#00e5ff' }}>{fmtNum(calcPrice(r.followersCount))} J</p>
+                      <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#00e5ff' }}>{fmtNum(calcPrice(r.followersCount))} T</p>
                       <p style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--t4)', marginTop: '2px' }}>{t('nav_price_label')}</p>
                     </div>
                   </Link>
@@ -244,7 +244,7 @@ export default function Navbar() {
             )}
           </div>}
 
-          {/* Jetons */}
+          {/* Tetons */}
           {user && (
             <Link href="/jetons" onClick={closeSearch} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontFamily: 'var(--font-mono)', fontSize: '12px', border: `1px solid ${pathname === '/jetons' ? 'rgba(0,229,255,0.35)' : 'rgba(0,229,255,0.15)'}`, padding: '0 0.9rem', alignSelf: 'stretch', textDecoration: 'none', background: pathname === '/jetons' ? 'rgba(0,229,255,0.04)' : 'none', flexShrink: 0 }}
               onMouseEnter={e => { if (pathname !== '/jetons') { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.3)'; (e.currentTarget as HTMLElement).style.background = 'rgba(0,229,255,0.03)' } }}
@@ -253,7 +253,7 @@ export default function Navbar() {
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#38bdf8', display: 'inline-block', animation: 'pulse 2s infinite', flexShrink: 0 }} />
               {balanceLoading
                 ? <span style={{ width: 52, height: 12, borderRadius: 3, background: 'rgba(255,255,255,0.08)', display: 'inline-block', animation: 'pulse 1.5s ease-in-out infinite' }} />
-                : <span style={{ color: '#e8e6dc', letterSpacing: '0.05em' }}>{fmtNum(jetons)} <span style={{ color: 'var(--t3)' }}>J</span></span>
+                : <span style={{ color: '#e8e6dc', letterSpacing: '0.05em' }}>{fmtNum(jetons)} <span style={{ color: 'var(--t3)' }}>T</span></span>
               }
             </Link>
           )}
@@ -367,7 +367,7 @@ export default function Navbar() {
                     <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>@{r.handle}</p>
                   </div>
                   <div style={{ flexShrink: 0 }}>
-                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#00e5ff' }}>{fmtNum(calcPrice(r.followersCount))} J</p>
+                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#00e5ff' }}>{fmtNum(calcPrice(r.followersCount))} T</p>
                   </div>
                 </Link>
               ))}

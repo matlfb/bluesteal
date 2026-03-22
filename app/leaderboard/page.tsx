@@ -93,7 +93,7 @@ export default function LeaderboardPage() {
                       <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t3)' }}>@{p.handle}</p>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <p style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#e8e6dc', fontWeight: 500 }}>{fmtNum(p.portfolio)} J</p>
+                      <p style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#e8e6dc', fontWeight: 500 }}>{fmtNum(p.portfolio)} T</p>
                       <p style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: 'var(--t3)', marginTop: '2px' }}>{p.cards} cartes</p>
                     </div>
                   </div>
@@ -152,7 +152,7 @@ export default function LeaderboardPage() {
                   </div>
                 </div>
                 {!isMobile && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#8a8878' }}>{p.cards}</span>}
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#e8e6dc' }}>{fmtNum(p.portfolio)} J</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#e8e6dc' }}>{fmtNum(p.portfolio)} T</span>
                 {!isMobile && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#8a8878' }}>{p.steals}</span>}
               </div>
             </Link>

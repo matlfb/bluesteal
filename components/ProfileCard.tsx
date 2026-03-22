@@ -56,7 +56,7 @@ export default function ProfileCard({ handle, displayName, avatar, followersCoun
           onClick={onPillClick ? (e) => { e.preventDefault(); e.stopPropagation(); onPillClick(e) } : undefined}
           style={{ position: 'absolute', top: '9px', right: '9px', background: 'rgba(14,14,12,0.78)', backdropFilter: 'blur(6px)', padding: '3px 9px', borderRadius: '999px', display: 'flex', alignItems: 'center', gap: '5px', border: '1px solid rgba(255,255,255,0.07)', zIndex: 4, cursor: onPillClick ? 'pointer' : 'default', transition: 'border-color 0.15s' }}
         >
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t1)' }}>{fmtNum(price)} J</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t1)' }}>{fmtNum(price)} T</span>
           {priceChange !== 0 && (
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', color: priceChange >= 0 ? 'var(--success)' : 'var(--danger)' }}>{priceChange >= 0 ? '+' : ''}{priceChange}%</span>
           )}

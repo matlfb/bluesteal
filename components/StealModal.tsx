@@ -81,7 +81,7 @@ export default function StealModal({ open, handle, displayName, avatar, price, p
         <div style={{ margin: '0 1.5rem', padding: '0.9rem 1rem', background: 'var(--elevated)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t3)', letterSpacing: '0.08em' }}>{t('modal_cost')}</span>
           <span style={{ fontFamily: 'var(--font-serif)', fontSize: '1.6rem', color: 'var(--t1)' }}>
-            {fmtNum(price)} <span style={{ fontFamily: 'var(--font-mono)', fontSize: '14px', color: 'var(--t3)' }}>J</span>
+            {fmtNum(price)} <span style={{ fontFamily: 'var(--font-mono)', fontSize: '14px', color: 'var(--t3)' }}>T</span>
           </span>
         </div>
         <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0 1.5rem', marginBottom: '1.5rem', cursor: 'pointer' }}>

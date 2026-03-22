@@ -5,10 +5,10 @@ import { useAuth } from '@/context/AuthContext'
 import { useLang } from '@/context/LangContext'
 
 const packs = [
-  { id: 'starter',  name: 'STARTER',  jetons: 5000,   price: '0,99 €',  bonus: null,   popular: false, ratio: '5 051 J/€'  },
-  { id: 'standard', name: 'STANDARD', jetons: 33000,  price: '4,99 €',  bonus: '+10%', popular: true,  ratio: '6 613 J/€'  },
-  { id: 'pro',      name: 'PRO',      jetons: 93750,  price: '9,99 €',  bonus: '+25%', popular: false, ratio: '9 384 J/€'  },
-  { id: 'elite',    name: 'ELITE',    jetons: 300000, price: '19,99 €', bonus: '+50%', popular: false, ratio: '15 007 J/€' },
+  { id: 'starter',  name: 'STARTER',  jetons: 5000,   price: '0,99 €',  bonus: null,   popular: false, ratio: '5 051 T/€'  },
+  { id: 'standard', name: 'STANDARD', jetons: 33000,  price: '4,99 €',  bonus: '+10%', popular: true,  ratio: '6 613 T/€'  },
+  { id: 'pro',      name: 'PRO',      jetons: 93750,  price: '9,99 €',  bonus: '+25%', popular: false, ratio: '9 384 T/€'  },
+  { id: 'elite',    name: 'ELITE',    jetons: 300000, price: '19,99 €', bonus: '+50%', popular: false, ratio: '15 007 T/€' },
 ]
 
 export default function JetonsPage() {
@@ -52,7 +52,7 @@ export default function JetonsPage() {
             <span style={{ fontFamily: 'var(--font-serif)', fontSize: '5rem', lineHeight: 1, color: '#e8e6dc' }}>
               {fmtNum(jetons)}
             </span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '1.2rem', color: 'var(--t3)' }}>J</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '1.2rem', color: 'var(--t3)' }}>T</span>
           </div>
         </div>
 
