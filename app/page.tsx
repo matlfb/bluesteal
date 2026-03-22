@@ -151,8 +151,13 @@ export default function HomePage() {
         try { const batch = dids.slice(i, i + 25); const params = batch.map(d => `actors=${encodeURIComponent(d)}`).join('&'); const r = await fetch(`https://public.api.bsky.app/xrpc/app.bsky.actor.getProfiles?${params}`); const data = await r.json(); for (const p of (data.profiles ?? [])) profileMap[p.did] = p } catch {}
       }
       let ownerMap: Record<string, { owner: string | null; value: number }> = {}
-      try { const res = await fetch(`/api/owners?subjects=${dids.join(',')}`); ownerMap = await res.json() } catch {}
-      const cards: Card[] = dids.map(did => { const p = profileMap[did]; if (!p) return null; return { did, handle: p.handle, displayName: p.displayName || p.handle, avatar: p.avatar || null, followersCount: p.followersCount || 0, owner: ownerMap[did]?.owner ?? null, price: ownerMap[did]?.value ?? BASE_PRICE } }).filter(Boolean) as Card[]
+      try {
+        const chunks: string[][] = []
+        for (let i = 0; i < dids.length; i += 25) chunks.push(dids.slice(i, i + 25))
+        const results = await Promise.all(chunks.map(chunk => fetch(`/api/owners?subjects=${chunk.join(',')}`).then(r => r.json())))
+        for (const r of results) Object.assign(ownerMap, r)
+      } catch {}
+      const cards: Card[] = dids.map(did => { const p = profileMap[did]; if (!p) return null; return { did, handle: p.handle, displayName: p.displayName || p.handle, avatar: p.avatar || null, followersCount: p.followersCount || 0, owner: ownerMap[did]?.owner ?? null, price: ownerMap[did]?.value ?? BASE_PRICE, verified: p.verification?.verifiedStatus === 'valid' || p.verification?.trustedVerifierStatus === 'valid' } }).filter(Boolean) as Card[]
       setFriendCards(cards)
       setFriendLoading(false)
     }
