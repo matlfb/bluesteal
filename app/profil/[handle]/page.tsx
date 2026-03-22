@@ -275,8 +275,8 @@ export default function ProfilPage() {
         const priceStr = price.toLocaleString()
         const emoji = ['🥳', '🔥', '🤯'][Math.floor(Math.random() * 3)]
         const text = prevOwner?.owner_handle
-          ? `I just bought @${profile.handle} from @${prevOwner.owner_handle} for ${priceStr} tokens on @bluesteal.app ${emoji}\n\nPlay on https://bluesteal.app`
-          : `I bought @${profile.handle} for ${priceStr} tokens on @bluesteal.app ${emoji}\n\nPlay on https://bluesteal.app`
+          ? `I just bought @${profile.handle} from @${prevOwner.owner_handle} for ${priceStr} tokens on @bluesteal.app ${emoji}\n\nStart your collection on https://bluesteal.app`
+          : `I bought @${profile.handle} for ${priceStr} tokens on @bluesteal.app ${emoji}\n\nStart your collection on https://bluesteal.app`
         const rt = new RichText({ text })
         await rt.detectFacets(agent)
         agent.post({ text: rt.text, facets: rt.facets }).catch(() => {})
