@@ -72,16 +72,21 @@ export async function syncFromClearsky(handle = 'bluesteal.app'): Promise<{ adde
   } while (cursor)
 
   // Sync incoming blocks (they blocked @bluesteal.app = opt-out) via ClearSky
-  const incomingRes = await fetch(
-    `https://public.api.clearsky.services/api/v1/anon/blocklist/${handle}`,
-    { signal: AbortSignal.timeout(10_000) }
-  )
   const newOptedOutSet = new Set<string>()
-  if (incomingRes.ok) {
+  let optedOutPage = 1
+  while (true) {
+    const incomingRes = await fetch(
+      `https://public.api.clearsky.services/api/v1/anon/single-blocklist/${handle}?page=${optedOutPage}`,
+      { signal: AbortSignal.timeout(10_000) }
+    )
+    if (!incomingRes.ok) break
     const incomingData = await incomingRes.json()
-    for (const item of (incomingData.data?.blocklist ?? [])) {
+    const items = incomingData.data?.blocklist ?? []
+    for (const item of items) {
       if (item.did) newOptedOutSet.add(item.did)
     }
+    if (items.length < 100) break
+    optedOutPage++
   }
 
   const [prevAuto, prevOptedOut] = await Promise.all([
