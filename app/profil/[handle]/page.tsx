@@ -248,6 +248,7 @@ export default function ProfilPage() {
       addOwned(profile.did)
       const prevOwner = currentOwner
       setCurrentOwner({ owner_did: user.did, owner_handle: user.handle })
+      setCardValue(Math.round(price * 1.2))
       fetch('/api/own', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
