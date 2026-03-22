@@ -5,6 +5,7 @@ import { appreciateValue, getValue } from '@/lib/card-values'
 import { addActivity } from '@/lib/activity'
 import { verifySession } from '@/lib/session'
 import { rateLimit } from '@/lib/rate-limit'
+import { batchProfiles } from '@/lib/profiles'
 
 export const runtime = 'nodejs'
 
@@ -14,7 +15,10 @@ export async function GET(req: NextRequest) {
   const subject = req.nextUrl.searchParams.get('subject')
   if (!subject) return NextResponse.json(null)
   const [owner, value] = await Promise.all([getOwner(subject), getValue(subject)])
-  return NextResponse.json(owner ? { ...owner, value } : { value })
+  if (!owner) return NextResponse.json({ value })
+  const profiles = await batchProfiles([owner.owner_did])
+  const owner_handle = profiles[owner.owner_did]?.handle ?? owner.owner_did
+  return NextResponse.json({ ...owner, owner_handle, value })
 }
 
 export async function POST(req: NextRequest) {
