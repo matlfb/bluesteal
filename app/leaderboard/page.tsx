@@ -107,11 +107,11 @@ export default function LeaderboardPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                       <div style={{ background: '#0a0d11', padding: '0.6rem' }}>
                         <p style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#e8e6dc', fontWeight: 500 }}>{fmtNum(p.portfolio)}</p>
-                        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--t3)', letterSpacing: '0.15em', marginTop: '2px' }}>JETONS</p>
+                        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--t3)', letterSpacing: '0.15em', marginTop: '2px' }}>TOKENS</p>
                       </div>
                       <div style={{ background: '#0a0d11', padding: '0.6rem' }}>
                         <p style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: '#38bdf8', fontWeight: 500 }}>{p.cards}</p>
-                        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--t3)', letterSpacing: '0.15em', marginTop: '2px' }}>CARTES</p>
+                        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '8px', color: 'var(--t3)', letterSpacing: '0.15em', marginTop: '2px' }}>CARDS</p>
                       </div>
                     </div>
                   </>
