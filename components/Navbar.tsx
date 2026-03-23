@@ -240,7 +240,7 @@ export default function Navbar() {
 
           {/* Tetons */}
           {user && (
-            <Link href="/jetons" onClick={closeSearch} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontFamily: 'var(--font-mono)', fontSize: '12px', border: `1px solid ${pathname === '/jetons' ? 'rgba(0,229,255,0.35)' : 'rgba(0,229,255,0.15)'}`, padding: '0 0.9rem', alignSelf: 'stretch', textDecoration: 'none', background: pathname === '/jetons' ? 'rgba(0,229,255,0.04)' : 'none', flexShrink: 0 }}
+            <Link href="/jetons" onClick={closeSearch} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontFamily: 'var(--font-mono)', fontSize: '12px', border: `1px solid ${pathname === '/jetons' ? 'rgba(0,229,255,0.35)' : 'rgba(0,229,255,0.15)'}`, padding: '0 0.9rem', alignSelf: 'stretch', minHeight: '38px', textDecoration: 'none', background: pathname === '/jetons' ? 'rgba(0,229,255,0.04)' : 'none', flexShrink: 0 }}
               onMouseEnter={e => { if (pathname !== '/jetons') { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.3)'; (e.currentTarget as HTMLElement).style.background = 'rgba(0,229,255,0.03)' } }}
               onMouseLeave={e => { if (pathname !== '/jetons') { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(0,229,255,0.15)'; (e.currentTarget as HTMLElement).style.background = 'none' } }}
             >

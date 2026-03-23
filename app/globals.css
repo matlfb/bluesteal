@@ -327,3 +327,5 @@ main {
     padding: 2rem 2.5rem 4rem;
   }
 }
+
+.footer-link:hover { color: #00e5ff !important; }
