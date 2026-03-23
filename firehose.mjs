@@ -12,7 +12,7 @@ if (!REDIS_URL || !REDIS_TOKEN) {
 const BASE_VALUE              = 1500
 const MIN_VALUE               = 600
 const STARTING_BALANCE        = 25000
-const INCOME_RATE             = 0.015
+const INCOME_RATE             = 0.0075
 const OWNED_DEPRECIATION_RATE = 0.005
 const DID_RE                  = /^did:[a-z]+:[a-zA-Z0-9._:%-]+$/
 
