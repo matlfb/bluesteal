@@ -31,25 +31,25 @@ export default function JetonsPage() {
   }, [user?.did])
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '4rem 2.5rem' }}>
+    <div className="jetons-page">
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '1.5rem', marginBottom: '3rem' }}>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '3.2rem', fontWeight: 400, color: '#e8e6dc' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '1.5rem', marginBottom: '2rem' }}>
+        <h1 className="jetons-title" style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, color: '#e8e6dc' }}>
           {t('jetons_title_pre')} <em style={{ fontStyle: 'italic', color: '#00e5ff' }}>{t('jetons_title_em')}</em>
         </h1>
         <div style={{ flex: 1, height: 1, background: 'rgba(0,229,255,0.1)', marginLeft: 'auto', maxWidth: 200 }} />
       </div>
 
       {/* Balance */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', marginBottom: '3.5rem' }}>
+      <div className="jetons-balance-grid">
 
         {/* Solde */}
-        <div style={{ background: '#0f1318', padding: '2.5rem', border: '1px solid rgba(0,229,255,0.12)', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ background: '#0f1318', padding: '2rem', border: '1px solid rgba(0,229,255,0.12)', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: '#00b4d8' }} />
           <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t3)', letterSpacing: '0.2em', marginBottom: '1.25rem' }}>{t('jetons_balance')}</p>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem' }}>
-            <span style={{ fontFamily: 'var(--font-serif)', fontSize: '5rem', lineHeight: 1, color: '#e8e6dc' }}>
+            <span className="jetons-balance-amount" style={{ fontFamily: 'var(--font-serif)', lineHeight: 1, color: '#e8e6dc' }}>
               {fmtNum(jetons)}
             </span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '1.2rem', color: 'var(--t3)' }}>T</span>
@@ -57,10 +57,10 @@ export default function JetonsPage() {
         </div>
 
         {/* Revenu passif */}
-        <div style={{ background: '#0f1318', padding: '2.5rem', border: '1px solid rgba(255,255,255,0.04)' }}>
+        <div style={{ background: '#0f1318', padding: '2rem', border: '1px solid rgba(255,255,255,0.04)' }}>
           <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t3)', letterSpacing: '0.2em', marginBottom: '1.25rem' }}>{t('jetons_passive')}</p>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.5rem' }}>
-            <span style={{ fontFamily: 'var(--font-serif)', fontSize: '3.5rem', lineHeight: 1, color: '#38bdf8' }}>
+            <span className="jetons-income-amount" style={{ fontFamily: 'var(--font-serif)', lineHeight: 1, color: '#38bdf8' }}>
               {hourlyIncome !== null ? `+${fmtNum(hourlyIncome)}` : '…'}
             </span>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '14px', color: '#003d52' }}>{t('jetons_per_hour')}</span>
@@ -73,12 +73,12 @@ export default function JetonsPage() {
 
       {/* Packs header */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '1.5rem', marginBottom: '1.5rem' }}>
-        <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '2.4rem', fontWeight: 400, color: '#e8e6dc' }}>{t('jetons_recharge')}</h2>
+        <h2 className="jetons-section-title" style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, color: '#e8e6dc' }}>{t('jetons_recharge')}</h2>
         <div style={{ flex: 1, height: 1, background: 'rgba(0,229,255,0.1)', marginLeft: 'auto', maxWidth: 200 }} />
       </div>
 
       {/* Packs grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
+      <div className="jetons-packs-grid">
         {packs.map((pack) => (
           <div key={pack.id} style={{
             background: pack.popular ? '#14191f' : '#0f1318',
