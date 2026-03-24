@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getOwner, setOwner } from '@/lib/db'
-import { debitBalance, getBalance } from '@/lib/balances'
+import { debitBalance, creditBalance, getBalance } from '@/lib/balances'
 import { appreciateValue, getValue } from '@/lib/card-values'
 import { addActivity } from '@/lib/activity'
 import { verifySession } from '@/lib/session'
@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
       price,
       at: now,
     }),
+    prevOwner?.owner_did ? creditBalance(prevOwner.owner_did, price) : Promise.resolve(),
   ])
 
   return NextResponse.json({ ok: true, newValue, balance: await getBalance(owner_did) })
