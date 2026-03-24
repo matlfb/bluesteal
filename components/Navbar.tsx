@@ -30,21 +30,22 @@ function IconHome({ active }: { active: boolean }) {
 }
 function IconSearch({ active }: { active: boolean }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#00e5ff' : '#5a6270'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8" fill={active ? '#00e5ff' : 'none'} stroke={active ? '#00e5ff' : '#5a6270'} strokeWidth="1.8"/>
+      <line x1="21" y1="21" x2="16.65" y2="16.65" stroke={active ? '#00e5ff' : '#5a6270'} strokeWidth="1.8"/>
     </svg>
   )
 }
 function IconActivity({ active }: { active: boolean }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#00e5ff' : '#5a6270'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill={active ? '#00e5ff' : 'none'} stroke={active ? '#00e5ff' : '#5a6270'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
     </svg>
   )
 }
 function IconLeaderboard({ active }: { active: boolean }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? '#00e5ff' : '#5a6270'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill={active ? '#00e5ff' : 'none'} stroke={active ? '#00e5ff' : '#5a6270'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <rect x="2" y="14" width="5" height="7" rx="1"/>
       <rect x="9.5" y="9" width="5" height="12" rx="1"/>
       <rect x="17" y="4" width="5" height="17" rx="1"/>
@@ -304,11 +305,13 @@ export default function Navbar() {
         {user && <button className="nav-bottom-item" onClick={openSearch}>
           <IconSearch active={searchOpen} />
         </button>}
-        {user && <Link href="/activity" className="nav-bottom-item" onClick={clearActivityAlert} style={{ position: 'relative' }}>
-          <IconActivity active={pathname === '/activity'} />
-          {hasActivityAlert && pathname !== '/activity' && (
-            <span style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: '50%', background: '#e05252', display: 'block' }} />
-          )}
+        {user && <Link href="/activity" className="nav-bottom-item" onClick={clearActivityAlert}>
+          <span style={{ position: 'relative', display: 'inline-flex' }}>
+            <IconActivity active={pathname === '/activity'} />
+            {hasActivityAlert && pathname !== '/activity' && (
+              <span style={{ position: 'absolute', top: -3, right: -3, width: 7, height: 7, borderRadius: '50%', background: '#e05252', display: 'block' }} />
+            )}
+          </span>
         </Link>}
         {user && <Link href="/leaderboard" className="nav-bottom-item">
           <IconLeaderboard active={pathname === '/leaderboard'} />
