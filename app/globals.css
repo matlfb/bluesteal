@@ -182,6 +182,7 @@ body::before {
 /* Desktop nav links/search/user: hidden by default (mobile) */
 .nav-desktop-links,
 .nav-desktop-search,
+.nav-desktop-search-wrap,
 .nav-desktop-user {
   display: none;
 }
@@ -201,6 +202,10 @@ body::before {
 
   .nav-desktop-links {
     display: flex;
+  }
+
+  .nav-desktop-search-wrap {
+    display: block;
   }
 
   .nav-desktop-search {
