@@ -20,13 +20,59 @@ const dmMono = DM_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'BlueSTEAL',
-  description: 'Trade Bluesky profiles as collectible cards',
+  metadataBase: new URL('https://bluesteal.app'),
+  title: {
+    default: 'BlueSTEAL — Trade Bluesky Profiles as Cards',
+    template: '%s | BlueSTEAL',
+  },
+  description: 'BlueSTEAL is a trading card game built on Bluesky. Collect, steal, and trade Bluesky profiles as collectible cards. Join the game at bluesteal.app.',
+  keywords: ['bluesteal', 'bluesteal.app', 'bluesky', 'trading cards', 'bluesky game', 'collect profiles', 'bluesky profiles', 'card game'],
+  authors: [{ name: 'BlueSTEAL', url: 'https://bluesteal.app' }],
+  creator: 'BlueSTEAL',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
+  alternates: {
+    canonical: 'https://bluesteal.app',
+  },
+  openGraph: {
+    type: 'website',
+    url: 'https://bluesteal.app',
+    siteName: 'BlueSTEAL',
+    title: 'BlueSTEAL — Trade Bluesky Profiles as Cards',
+    description: 'Collect, steal, and trade Bluesky profiles as collectible cards. The trading card game built on Bluesky.',
+    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'BlueSTEAL' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'BlueSTEAL — Trade Bluesky Profiles as Cards',
+    description: 'Collect, steal, and trade Bluesky profiles as collectible cards. The trading card game built on Bluesky.',
+    images: ['/og-image.png'],
+  },
+}
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'BlueSTEAL',
+  url: 'https://bluesteal.app',
+  description: 'BlueSTEAL is a trading card game built on Bluesky. Collect, steal, and trade Bluesky profiles as collectible cards.',
+  applicationCategory: 'GameApplication',
+  operatingSystem: 'Web',
+  offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={`${dmSerif.variable} ${manrope.variable} ${dmMono.variable}`}>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body>
         <AuthProvider>
           <LangProvider>
