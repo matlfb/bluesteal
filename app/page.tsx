@@ -27,7 +27,7 @@ function Carousel({ cards, loading, onCardClick, userDid, ownedDids }: { cards: 
     <div ref={ref} className="carousel-scroll">
       {loading
         ? Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} style={{ flexShrink: 0, width: 200, aspectRatio: '4/5', background: '#0f1318', opacity: 0.5 }} />
+            <div key={i} style={{ flexShrink: 0, width: 200, aspectRatio: '4/5', background: 'var(--surface)', animation: 'pulse 1.5s ease-in-out infinite' }} />
           ))
         : cards.map(card => (
             <Link key={card.did} href={`/profil/${card.handle}`} style={{ flexShrink: 0, width: 200, textDecoration: 'none', display: 'block' }}>
@@ -51,7 +51,7 @@ function CardGrid({ cards, loading, onCardClick, userDid, isMobile }: {
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(180px, 1fr))', gap: isMobile ? '0.75rem' : '1rem', alignItems: 'stretch' }}>
         {loading
           ? Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} style={{ aspectRatio: '4/5', background: '#0f1318', opacity: 0.5 }} />
+              <div key={i} style={{ aspectRatio: '4/5', background: 'var(--surface)', animation: 'pulse 1.5s ease-in-out infinite' }} />
             ))
           : cards.map(card => (
               <Link key={card.did} href={`/profil/${card.handle}`} style={{ textDecoration: 'none', display: 'block', width: '100%', minWidth: 0 }}>

@@ -152,8 +152,51 @@ export default function ComptePage() {
 
   if (authLoading || loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--t3)', letterSpacing: '0.1em' }}>{t('account_loading')}</p>
+      <div>
+        {/* Banner */}
+        <div style={{ height: 200, background: 'var(--surface)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+        {/* Header */}
+        <div style={{ borderBottom: '1px solid rgba(0,229,255,0.08)' }}>
+          <div className="profile-header-wrap">
+            <div className="profile-header-row">
+              <div style={{ width: 112, height: 112, flexShrink: 0, background: 'var(--elevated)', animation: 'pulse 1.5s ease-in-out infinite', border: '3px solid var(--bg)' }} />
+              <div className="profile-info">
+                <div className="profile-meta">
+                  <div>
+                    <div style={{ height: 38, width: 220, background: 'var(--surface)', animation: 'pulse 1.5s ease-in-out infinite', marginBottom: 10 }} />
+                    <div style={{ height: 14, width: 130, background: 'var(--surface)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                  </div>
+                  <div className="profile-actions">
+                    <div style={{ height: 38, width: 180, background: 'var(--surface)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                  </div>
+                </div>
+                <div style={{ height: 14, maxWidth: 460, width: '100%', background: 'var(--surface)', animation: 'pulse 1.5s ease-in-out infinite', marginTop: 16 }} />
+                <div style={{ height: 14, maxWidth: 320, width: '80%', background: 'var(--surface)', animation: 'pulse 1.5s ease-in-out infinite', marginTop: 8 }} />
+                <div className="profile-stats">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i}>
+                      <div style={{ height: 8, width: 60, background: 'var(--surface)', animation: 'pulse 1.5s ease-in-out infinite', marginBottom: 10 }} />
+                      <div style={{ height: 20, width: 48, background: 'var(--surface)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Tabs + collection */}
+        <div className="profile-tabs-section">
+          <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid rgba(0,229,255,0.08)', marginBottom: '2rem' }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} style={{ height: 36, width: 100, background: 'var(--surface)', animation: 'pulse 1.5s ease-in-out infinite', marginRight: 4 }} />
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem' }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} style={{ aspectRatio: '4/5', background: 'var(--surface)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
