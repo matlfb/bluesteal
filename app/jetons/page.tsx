@@ -63,7 +63,7 @@ export default function JetonsPage() {
           <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--t3)', letterSpacing: '0.2em', marginBottom: '1.25rem' }}>{t('jetons_passive')}</p>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.5rem' }}>
             {incomeLoading ? (
-              <div style={{ height: 40, width: 100, background: 'var(--elevated)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              <div style={{ height: 40, width: 100, background: 'var(--elevated)', animation: 'skeleton 1.4s ease-in-out infinite' }} />
             ) : (
               <>
                 <span className="jetons-income-amount" style={{ fontFamily: 'var(--font-serif)', lineHeight: 1, color: '#38bdf8' }}>
@@ -74,7 +74,7 @@ export default function JetonsPage() {
             )}
           </div>
           {incomeLoading ? (
-            <div style={{ height: 12, width: '70%', background: 'var(--elevated)', animation: 'pulse 1.5s ease-in-out infinite', marginTop: 8 }} />
+            <div style={{ height: 12, width: '70%', background: 'var(--elevated)', animation: 'skeleton 1.4s ease-in-out infinite', marginTop: 8 }} />
           ) : (
             <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--t3)', lineHeight: 1.8 }}>
               {cardCount !== null ? t('jetons_based', { count: cardCount, s: cardCount !== 1 ? 's' : '' }) : t('jetons_based_loading')}

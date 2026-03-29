@@ -460,12 +460,12 @@ export default function ActivityPage() {
               display: 'grid', gridTemplateColumns: '36px 1fr auto', alignItems: 'center', gap: '1rem',
               padding: '1rem 0', borderBottom: '1px solid rgba(255,255,255,0.04)',
             }}>
-              <div style={{ width: 36, height: 36, background: 'var(--elevated)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              <div style={{ width: 36, height: 36, background: 'var(--elevated)', animation: 'skeleton 1.4s ease-in-out infinite' }} />
               <div>
-                <div style={{ height: 12, width: `${55 + (i % 3) * 15}%`, background: 'var(--surface)', animation: 'pulse 1.5s ease-in-out infinite', marginBottom: 8 }} />
-                <div style={{ height: 10, width: '30%', background: 'var(--surface)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                <div style={{ height: 12, width: `${55 + (i % 3) * 15}%`, background: 'var(--surface)', animation: 'skeleton 1.4s ease-in-out infinite', marginBottom: 8 }} />
+                <div style={{ height: 10, width: '30%', background: 'var(--surface)', animation: 'skeleton 1.4s ease-in-out infinite' }} />
               </div>
-              <div style={{ height: 12, width: 48, background: 'var(--surface)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              <div style={{ height: 12, width: 48, background: 'var(--surface)', animation: 'skeleton 1.4s ease-in-out infinite' }} />
             </div>
           ))}
         </div>

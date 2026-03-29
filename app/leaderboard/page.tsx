@@ -52,7 +52,7 @@ export default function LeaderboardPage() {
         <>
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '1rem', marginBottom: '3rem' }}>
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} style={{ background: 'var(--surface)', height: 180, animation: 'pulse 1.5s ease-in-out infinite' }} />
+              <div key={i} style={{ background: 'var(--surface)', height: 180, animation: 'skeleton 1.4s ease-in-out infinite' }} />
             ))}
           </div>
           <div style={{ border: '1px solid rgba(0,229,255,0.1)', background: 'var(--surface)' }}>
@@ -63,17 +63,17 @@ export default function LeaderboardPage() {
                 gap: '0.75rem', padding: isMobile ? '0.75rem 1rem' : '1rem', alignItems: 'center',
                 borderBottom: '1px solid rgba(255,255,255,0.03)',
               }}>
-                <div style={{ height: 12, width: 28, background: 'var(--elevated)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                <div style={{ height: 12, width: 28, background: 'var(--elevated)', animation: 'skeleton 1.4s ease-in-out infinite' }} />
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{ width: 32, height: 32, background: 'var(--elevated)', flexShrink: 0, animation: 'pulse 1.5s ease-in-out infinite' }} />
+                  <div style={{ width: 32, height: 32, background: 'var(--elevated)', flexShrink: 0, animation: 'skeleton 1.4s ease-in-out infinite' }} />
                   <div>
-                    <div style={{ height: 13, width: `${80 + (i % 4) * 20}px`, background: 'var(--elevated)', animation: 'pulse 1.5s ease-in-out infinite', marginBottom: 6 }} />
-                    {!isMobile && <div style={{ height: 10, width: 70, background: 'var(--elevated)', animation: 'pulse 1.5s ease-in-out infinite' }} />}
+                    <div style={{ height: 13, width: `${80 + (i % 4) * 20}px`, background: 'var(--elevated)', animation: 'skeleton 1.4s ease-in-out infinite', marginBottom: 6 }} />
+                    {!isMobile && <div style={{ height: 10, width: 70, background: 'var(--elevated)', animation: 'skeleton 1.4s ease-in-out infinite' }} />}
                   </div>
                 </div>
-                {!isMobile && <div style={{ height: 12, width: 24, background: 'var(--elevated)', animation: 'pulse 1.5s ease-in-out infinite' }} />}
-                <div style={{ height: 12, width: 60, background: 'var(--elevated)', animation: 'pulse 1.5s ease-in-out infinite' }} />
-                {!isMobile && <div style={{ height: 12, width: 24, background: 'var(--elevated)', animation: 'pulse 1.5s ease-in-out infinite' }} />}
+                {!isMobile && <div style={{ height: 12, width: 24, background: 'var(--elevated)', animation: 'skeleton 1.4s ease-in-out infinite' }} />}
+                <div style={{ height: 12, width: 60, background: 'var(--elevated)', animation: 'skeleton 1.4s ease-in-out infinite' }} />
+                {!isMobile && <div style={{ height: 12, width: 24, background: 'var(--elevated)', animation: 'skeleton 1.4s ease-in-out infinite' }} />}
               </div>
             ))}
           </div>

@@ -87,6 +87,11 @@ body::before {
   50% { opacity: 0.3; }
 }
 
+@keyframes skeleton {
+  0%, 100% { background-color: #0f1318; }
+  50%       { background-color: #1a2535; }
+}
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
