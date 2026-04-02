@@ -42,7 +42,7 @@ export async function getFriendsActivity(dids: string[], limit = 50): Promise<Le
     .slice(0, limit)
 }
 
-export async function getUserActivity(did: string, limit = 50): Promise<LedgerEvent[]> {
+export async function getUserActivity(did: string, limit = 100): Promise<LedgerEvent[]> {
   const all = await redis.lrange('activity:global', 0, SCAN_LIMIT - 1)
   return all
     .map(parse)
