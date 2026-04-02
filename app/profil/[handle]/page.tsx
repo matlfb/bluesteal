@@ -514,18 +514,6 @@ export default function ProfilPage() {
               </button>
             ))}
           </div>
-          {tab === 'collection' && ownedCards.length > 0 && (
-            <Link href={`/profil/${profile.handle}/collection`} style={{
-              fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em',
-              color: 'var(--t3)', textDecoration: 'none', paddingBottom: '0.6rem',
-              transition: 'color 0.15s',
-            }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#00e5ff' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t3)' }}
-            >
-              SEE ALL →
-            </Link>
-          )}
         </div>
 
         {/* COLLECTION */}
