@@ -127,7 +127,7 @@ async function resolveHandle(did) {
 
 // ── Backup horaire ────────────────────────────────────────────────────────────
 
-const BACKUP_KEEP = 48 // heures de rétention
+const BACKUP_KEEP = 168 // heures de rétention (7 jours)
 
 async function backupBalances() {
   const keys = await redis('keys', 'balance:*')
