@@ -129,33 +129,50 @@ async function resolveHandle(did) {
 
 const BACKUP_KEEP = 168 // heures de rétention (7 jours)
 
-async function backupBalances() {
-  const keys = await redis('keys', 'balance:*')
-  if (!keys || !keys.length) return
-
+async function backupAll() {
   const ts = new Date().toISOString().slice(0, 13) // ex: "2026-04-02T13"
-  const backupKey = `backup:balances:${ts}`
+  const backupKey = `backup:${ts}`
 
-  const values = await Promise.all(keys.map(k => redis('get', k)))
-  const commands = [['del', backupKey]]
-  for (let i = 0; i < keys.length; i++) {
-    if (values[i] !== null) commands.push(['hset', backupKey, keys[i], JSON.stringify(values[i])])
+  // Fetch tout en parallèle
+  const [balanceKeys, ledger, ownershipsAll, ownershipsRecent, cardValues, steals] = await Promise.all([
+    redis('keys', 'balance:*'),
+    redis('lrange', 'activity:global', '0', '-1'),
+    redis('hgetall', 'ownerships:all'),
+    redis('lrange', 'ownerships:recent', '0', '-1'),
+    redis('hgetall', 'card_values:all'),
+    redis('hgetall', 'steals:all'),
+  ])
+
+  // Fetch toutes les balances
+  const balanceValues = await Promise.all((balanceKeys || []).map(k => redis('get', k)))
+  const balances = {}
+  for (let i = 0; i < (balanceKeys || []).length; i++) {
+    if (balanceValues[i] !== null) balances[balanceKeys[i]] = balanceValues[i]
   }
-  commands.push(['lpush', 'backup:timestamps', ts])
-  commands.push(['ltrim', 'backup:timestamps', '0', String(BACKUP_KEEP - 1)])
 
+  const commands = [
+    ['del', backupKey],
+    ['hset', backupKey, 'balances',           JSON.stringify(balances)],
+    ['hset', backupKey, 'ledger',             JSON.stringify(ledger || [])],
+    ['hset', backupKey, 'ownerships_all',     JSON.stringify(ownershipsAll || [])],
+    ['hset', backupKey, 'ownerships_recent',  JSON.stringify(ownershipsRecent || [])],
+    ['hset', backupKey, 'card_values',        JSON.stringify(cardValues || [])],
+    ['hset', backupKey, 'steals',             JSON.stringify(steals || [])],
+    ['lpush', 'backup:timestamps', ts],
+    ['ltrim', 'backup:timestamps', '0', String(BACKUP_KEEP - 1)],
+  ]
   await redisPipeline(commands)
 
   // Supprimer les snapshots expirés
   const allTs = await redis('lrange', 'backup:timestamps', '0', '-1')
   const toKeep = new Set(allTs)
-  const allKeys = await redis('keys', 'backup:balances:*')
-  for (const k of (allKeys || [])) {
-    const hour = k.replace('backup:balances:', '')
+  const allBackupKeys = await redis('keys', 'backup:20*')
+  for (const k of (allBackupKeys || [])) {
+    const hour = k.replace('backup:', '')
     if (!toKeep.has(hour)) await redis('del', k)
   }
 
-  console.log(`[backup] balances sauvegardées → ${backupKey} (${keys.length} comptes)`)
+  console.log(`[backup] snapshot ${ts} — ${Object.keys(balances).length} comptes, ${(ledger || []).length} events ledger`)
 }
 
 // ── Hourly cron ───────────────────────────────────────────────────────────────
@@ -177,7 +194,7 @@ async function runHourly() {
     console.log(`[cron] +${income}J → ${o.owner_did}`)
   }
 
-  await backupBalances()
+  await backupAll()
   console.log('[cron] done')
 }
 
