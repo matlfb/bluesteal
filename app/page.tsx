@@ -64,11 +64,17 @@ function CardGrid({ cards, loading, onCardClick, userDid, isMobile }: {
   )
 }
 
-function SectionTitle({ children, isMobile, isTablet, compact }: { children: React.ReactNode; isMobile?: boolean; isTablet?: boolean; compact?: boolean }) {
+function SectionTitle({ children, isMobile, isTablet, compact, seeMoreHref }: { children: React.ReactNode; isMobile?: boolean; isTablet?: boolean; compact?: boolean; seeMoreHref?: string }) {
   return (
     <div style={{ maxWidth: (isMobile && compact) ? 'none' : 1100, margin: (isMobile && compact) ? 0 : '0 auto', padding: isMobile ? (compact ? 0 : '20px 20px 12px') : isTablet ? (compact ? '0 2.5rem' : '24px 2.5rem 0') : '0 2.5rem', marginBottom: isMobile ? (compact ? '12px' : 0) : '1.5rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
         <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: isMobile ? '2rem' : '2.4rem', fontWeight: 400, color: '#e8e6dc', flexShrink: 0 }}>{children}</h2>
+        {seeMoreHref && (
+          <Link href={seeMoreHref} style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', letterSpacing: '0.15em', color: 'var(--t3)', textDecoration: 'none', whiteSpace: 'nowrap', transition: 'color 0.15s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#00e5ff' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--t3)' }}
+          >SEE MORE →</Link>
+        )}
       </div>
     </div>
   )
@@ -218,7 +224,7 @@ export default function HomePage() {
 
       {user && (recentCards.length > 0 || recentLoading) && (
         <div style={{ padding: (isMobile || isTablet) ? 0 : '3.5rem 0 0' }}>
-          <SectionTitle isMobile={isMobile} isTablet={isTablet}>{t('home_recently_collected')}</SectionTitle>
+          <SectionTitle isMobile={isMobile} isTablet={isTablet} seeMoreHref="/recently-collected">{t('home_recently_collected')}</SectionTitle>
           <Carousel cards={recentCards} loading={recentLoading} onCardClick={setModalCard} userDid={user.did} ownedDids={ownedDids} />
           <Divider />
         </div>
