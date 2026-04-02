@@ -125,6 +125,39 @@ async function resolveHandle(did) {
   return did
 }
 
+// ── Backup horaire ────────────────────────────────────────────────────────────
+
+const BACKUP_KEEP = 48 // heures de rétention
+
+async function backupBalances() {
+  const keys = await redis('keys', 'balance:*')
+  if (!keys || !keys.length) return
+
+  const ts = new Date().toISOString().slice(0, 13) // ex: "2026-04-02T13"
+  const backupKey = `backup:balances:${ts}`
+
+  const values = await Promise.all(keys.map(k => redis('get', k)))
+  const commands = [['del', backupKey]]
+  for (let i = 0; i < keys.length; i++) {
+    if (values[i] !== null) commands.push(['hset', backupKey, keys[i], JSON.stringify(values[i])])
+  }
+  commands.push(['lpush', 'backup:timestamps', ts])
+  commands.push(['ltrim', 'backup:timestamps', '0', String(BACKUP_KEEP - 1)])
+
+  await redisPipeline(commands)
+
+  // Supprimer les snapshots expirés
+  const allTs = await redis('lrange', 'backup:timestamps', '0', '-1')
+  const toKeep = new Set(allTs)
+  const allKeys = await redis('keys', 'backup:balances:*')
+  for (const k of (allKeys || [])) {
+    const hour = k.replace('backup:balances:', '')
+    if (!toKeep.has(hour)) await redis('del', k)
+  }
+
+  console.log(`[backup] balances sauvegardées → ${backupKey} (${keys.length} comptes)`)
+}
+
 // ── Hourly cron ───────────────────────────────────────────────────────────────
 
 async function runHourly() {
@@ -144,6 +177,7 @@ async function runHourly() {
     console.log(`[cron] +${income}J → ${o.owner_did}`)
   }
 
+  await backupBalances()
   console.log('[cron] done')
 }
 
